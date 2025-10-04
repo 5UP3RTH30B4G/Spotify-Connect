@@ -243,6 +243,66 @@ npm test                 # Tests du client
 - Vérifiez que le serveur Socket.IO fonctionne (port 5000)
 - Vérifiez les paramètres CORS
 
+## 🚀 Déploiement en production
+
+### Scripts automatisés
+Ce projet inclut des scripts de déploiement automatisés pour simplifier la mise en production :
+
+```cmd
+# 1. Configuration initiale (une seule fois)
+set-deploy-config.cmd    # Configure vos identifiants serveur (sécurisé)
+setup-ssh.cmd           # Configure l'authentification SSH
+
+# 2. Déploiement
+deploy.cmd              # Déploiement complet
+quick-deploy.cmd        # Déploiement rapide du client uniquement
+
+# 3. Documentation
+sync-wiki.cmd           # Synchronise la documentation avec le wiki GitHub
+```
+
+### Configuration du serveur de production
+
+1. **Configurez vos identifiants** (fichier local non publié) :
+   ```cmd
+   set-deploy-config.cmd
+   ```
+
+2. **Configurez SSH** pour l'authentification automatique :
+   ```cmd
+   setup-ssh.cmd
+   ```
+
+3. **Déployez l'application** :
+   ```cmd
+   deploy.cmd
+   ```
+
+**📋 Documentation complète :** Consultez [DEPLOY.md](DEPLOY.md) pour tous les détails des scripts de déploiement.
+
+### Options de déploiement avancées
+```cmd
+deploy.cmd --client-only     # Client React seulement
+deploy.cmd --server-only     # Serveur Node.js seulement  
+deploy.cmd --no-build        # Sans rebuild du client
+deploy.cmd --no-restart      # Sans redémarrage du serveur
+deploy.cmd --help            # Afficher toutes les options
+```
+
+### Variables d'environnement de production
+Sur votre serveur, configurez ces variables dans `server/.env` :
+```env
+NODE_ENV=production
+PORT=5000
+CLIENT_URL=https://votre-domaine.com
+
+SPOTIFY_CLIENT_ID=votre_client_id
+SPOTIFY_CLIENT_SECRET=votre_client_secret
+SPOTIFY_REDIRECT_URI=https://votre-domaine.com/auth/callback
+
+API_BASE_URL=https://votre-domaine.com
+```
+
 ## 🤝 Contribution
 
 1. Forkez le projet
