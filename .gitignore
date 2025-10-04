@@ -40,6 +40,7 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+script\.env.deploy-config
 
 # Configuration de déploiement (contient des identifiants sensibles)
 deploy-config.env

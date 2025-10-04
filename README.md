@@ -250,44 +250,82 @@ Ce projet inclut des scripts de déploiement automatisés pour simplifier la mis
 
 ```cmd
 # 1. Configuration initiale (une seule fois)
-set-deploy-config.cmd    # Configure vos identifiants serveur (sécurisé)
-setup-ssh.cmd           # Configure l'authentification SSH
+cd script
+.\configure-ssh.cmd     # Configure le serveur de déploiement
 
-# 2. Déploiement
-deploy.cmd              # Déploiement complet
-quick-deploy.cmd        # Déploiement rapide du client uniquement
+# 2. Authentification sécurisée (recommandé)
+.\setup-ssh-keys.cmd    # 🆕 Configuration automatisée des clés SSH
 
-# 3. Documentation
-sync-wiki.cmd           # Synchronise la documentation avec le wiki GitHub
+# 3. Déploiement automatique
+.\deploy-menu.cmd       # Menu principal interactif
+.\deploy-auto.cmd       # Déploiement entièrement automatisé
+
+# 4. Utilitaires
+.\ssh-password-manager.cmd  # Gestion sécurisée des mots de passe
+.\fix-mobile-ui.cmd         # Corrections de l'interface mobile
 ```
+
+### 🔑 Scripts de déploiement disponibles
+
+- **`deploy-menu.cmd`** - Menu principal interactif avec toutes les options
+- **`setup-ssh-keys.cmd`** - 🆕 Configuration automatisée des clés SSH (recommandé)
+- **`ssh-password-manager.cmd`** - Gestion sécurisée des mots de passe SSH
+- **`deploy-auto.cmd`** - Déploiement entièrement automatisé
+- **`configure-ssh.cmd`** - Configuration du serveur de déploiement
+- **`fix-mobile-ui.cmd`** - Corrections automatiques de l'interface mobile
+- **`test-ssh.cmd`** - Test de connexion et prérequis
+- **`logs-ssh.cmd`** - Gestion des logs et contrôle de l'application
 
 ### Configuration du serveur de production
 
-1. **Configurez vos identifiants** (fichier local non publié) :
+1. **Configurez votre serveur de déploiement** :
    ```cmd
-   set-deploy-config.cmd
+   cd script
+   .\configure-ssh.cmd
    ```
 
-2. **Configurez SSH** pour l'authentification automatique :
+2. **Configurez l'authentification SSH** (recommandé) :
    ```cmd
-   setup-ssh.cmd
+   .\setup-ssh-keys.cmd
+   ```
+   
+   Ou alternativement, sauvegardez votre mot de passe :
+   ```cmd
+   .\ssh-password-manager.cmd
    ```
 
-3. **Déployez l'application** :
+3. **Déployez votre application** :
    ```cmd
-   deploy.cmd
+   .\deploy-menu.cmd
+   # ou directement
+   .\deploy-auto.cmd
    ```
 
-**📋 Documentation complète :** Consultez [DEPLOY.md](DEPLOY.md) pour tous les détails des scripts de déploiement.
+### 🆕 Nouvelles fonctionnalités de déploiement
 
-### Options de déploiement avancées
-```cmd
-deploy.cmd --client-only     # Client React seulement
-deploy.cmd --server-only     # Serveur Node.js seulement  
-deploy.cmd --no-build        # Sans rebuild du client
-deploy.cmd --no-restart      # Sans redémarrage du serveur
-deploy.cmd --help            # Afficher toutes les options
-```
+#### 🔑 Configuration automatisée des clés SSH
+Le nouveau script `setup-ssh-keys.cmd` simplifie la configuration des clés SSH :
+- **Génération automatique** de clés RSA 4096 bits
+- **Copie sécurisée** vers le serveur
+- **Test de connexion** sans mot de passe
+- **Déploiement transparent** sans saisie de credentials
+
+#### 📱 Corrections de l'interface mobile
+Le script `fix-mobile-ui.cmd` applique automatiquement :
+- **Player fixe** en bas d'écran
+- **Contrôles tactiles** optimisés
+- **Layout responsive** adaptatif
+- **Corrections CSS** pour tous les écrans
+
+#### 🔐 Gestion sécurisée des mots de passe
+Le système `ssh-password-manager.cmd` offre :
+- **Stockage sécurisé** avec encodage Base64
+- **Authentification automatique** pour SSH
+- **Test de connexion** rapide
+- **Fallback** vers saisie manuelle
+
+### 📋 Documentation complète
+Consultez le dossier `script/README.md` pour tous les détails des scripts de déploiement.
 
 ### Variables d'environnement de production
 Sur votre serveur, configurez ces variables dans `server/.env` :

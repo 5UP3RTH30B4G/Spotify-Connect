@@ -1,4 +1,8 @@
-# 🚀 Système de Déploiement SSH - Spotify Connect
+# 🚀 Système de Déplo### 🔧 Scripts de Correction
+- **`fix-mobile-ui.cmd`** - 🆕 Correction automatique de l'interface mobile
+
+### 🔑 Scripts d'Authentification
+- **`setup-ssh-keys.cmd`** - 🆕 Configuration complète des clés SSHment SSH - Spotify Connect
 
 Ce dossier contient un système de déploiement complet pour l'application Spotify Connect utilisant l'authentification SSH par mot de passe, avec gestion automatisée des credentials.
 
@@ -9,6 +13,7 @@ Ce dossier contient un système de déploiement complet pour l'application Spoti
 
 ### ⚙️ Scripts de Configuration
 - **`configure-ssh.cmd`** - Configuration du serveur de déploiement
+- **`setup-ssh-keys.cmd`** - 🆕 Configuration automatisée des clés SSH
 - **`ssh-password-manager.cmd`** - 🆕 Gestion sécurisée du mot de passe SSH
 - **`deploy-config.env`** - Fichier de configuration (serveur, utilisateur, chemin)
 
@@ -34,12 +39,21 @@ Ce dossier contient un système de déploiement complet pour l'application Spoti
 **Configuration automatique :**
 ```cmd
 deploy-menu.cmd → Option 9: Configurer les clés SSH
+# OU directement:
+setup-ssh-keys.cmd
 ```
 
+**Fonctionnalités du script `setup-ssh-keys.cmd` :**
+1. 🔍 **Vérifier les clés existantes**
+2. 🔑 **Générer une nouvelle clé RSA 4096 bits**
+3. 📤 **Copier automatiquement la clé vers le serveur**
+4. ✅ **Tester la connexion sans mot de passe**
+5. 🗑️ **Supprimer les clés si nécessaire**
+
 **Étapes automatisées :**
-1. **Génération** - Clé RSA 4096 bits
-2. **Copie** - Installation sur le serveur
-3. **Test** - Validation de la connexion
+1. **Génération** - Clé RSA 4096 bits avec email
+2. **Copie** - Installation sécurisée sur le serveur
+3. **Test** - Validation complète de la connexion
 4. **Déploiement** - Sans saisie de mot de passe
 
 ### �🔐 Gestion Automatisée du Mot de Passe SSH
@@ -106,6 +120,24 @@ deploy-menu.cmd
 # Option 1: Configurer le serveur
 # Option 2: Sauvegarder le mot de passe SSH
 # Option 6: Déployer automatiquement
+```
+
+### 🔧 Workflow de Développement Complet
+
+```cmd
+# 1. Configuration initiale (une seule fois)
+deploy-menu.cmd → Option 1 (Configurer serveur)
+deploy-menu.cmd → Option 9 (Configurer clés SSH) # Recommandé
+
+# 2. Corrections de l'interface mobile
+fix-mobile-ui.cmd
+
+# 3. Construction et déploiement
+deploy-menu.cmd → Option 5 (Construire)
+deploy-menu.cmd → Option 6 (Déployer automatiquement)
+
+# 4. Surveillance
+deploy-menu.cmd → Option 7 (Voir les logs)
 ```
 
 ### 🔄 Workflow de Développement
@@ -346,6 +378,37 @@ nano /var/www/spotify-connect/server/.env
 Pour mettre à jour l'application :
 1. Faites vos modifications en local
 2. Commitez vos changements
+3. Utilisez `deploy-menu.cmd` → Option 6 pour redéployer
+
+## ✨ Résumé des Nouveautés
+
+### 🆕 Scripts Ajoutés Récemment
+- **`setup-ssh-keys.cmd`** - Configuration automatisée des clés SSH
+  - Interface intuitive avec menu interactif
+  - Génération, copie et test automatiques des clés
+  - Diagnostics et résolution de problèmes intégrés
+  
+- **`fix-mobile-ui.cmd`** - Corrections de l'interface mobile
+  - Application automatique des corrections CSS
+  - Optimisation du player mobile
+  - Rebuild automatique du projet
+
+### 🔧 Améliorations des Scripts Existants
+- **`deploy-auto.cmd`** - Détection intelligente de l'authentification
+  - Priorité aux clés SSH si disponibles
+  - Fallback automatique vers mot de passe sauvegardé
+  - Messages informatifs sur le mode d'authentification
+
+- **`deploy-menu.cmd`** - Menu enrichi
+  - Ajout de l'option configuration des clés SSH
+  - Réorganisation logique des options
+  - Meilleure navigation entre les fonctionnalités
+
+### 🚀 Fonctionnalités Clés
+1. **Authentification Zero-Touch** avec les clés SSH
+2. **Interface Mobile Optimisée** avec corrections automatiques
+3. **Déploiement Intelligent** avec détection du mode d'auth
+4. **Workflow Simplifié** avec un seul point d'entrée
 3. Utilisez `deploy-ssh.cmd` pour redéployer
 
 Le système sauvegarde automatiquement l'ancienne version avant le déploiement.
