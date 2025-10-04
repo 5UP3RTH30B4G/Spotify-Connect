@@ -2,6 +2,9 @@
   text-align: center;
   min-height: 100vh;
   background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+  /* Prévenir l'étirement horizontal sur mobile */
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 .App-logo {
@@ -97,6 +100,249 @@
   animation: fadeInUp 0.3s ease-out;
 }
 
+/* CORRECTIONS INTERFACE MOBILE */
+
+/* Conteneur principal responsive */
+@media (max-width: 768px) {
+  .App {
+    padding: 0;
+    margin: 0;
+    min-height: 100vh;
+    width: 100vw;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Correction du layout mobile */
+  .MuiContainer-root {
+    padding: 8px !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Cards adaptées mobile */
+  .MuiCard-root {
+    margin: 4px 0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+  }
+
+  /* Player controls mobile */
+  .mobile-player-controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, transparent 0%, #121212 20%);
+    backdrop-filter: blur(10px);
+    padding: 12px;
+    z-index: 1000;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .mobile-player-card {
+    background: rgba(18, 18, 18, 0.95) !important;
+    border-radius: 16px !important;
+    padding: 16px !important;
+    margin: 0 !important;
+  }
+
+  /* Contrôles de lecture mobile */
+  .mobile-playback-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin: 12px 0;
+  }
+
+  .mobile-play-button {
+    width: 56px !important;
+    height: 56px !important;
+    background: #1DB954 !important;
+    color: white !important;
+    box-shadow: 0 4px 16px rgba(29, 185, 84, 0.4) !important;
+  }
+
+  .mobile-control-button {
+    width: 44px !important;
+    height: 44px !important;
+    color: rgba(255,255,255,0.8) !important;
+  }
+
+  /* Slider de progression mobile */
+  .mobile-progress-slider {
+    margin: 8px 0 !important;
+  }
+
+  .mobile-progress-slider .MuiSlider-thumb {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .mobile-progress-slider .MuiSlider-track {
+    height: 4px !important;
+  }
+
+  .mobile-progress-slider .MuiSlider-rail {
+    height: 4px !important;
+    opacity: 0.3 !important;
+  }
+
+  /* Informations de piste mobile */
+  .mobile-track-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 12px;
+  }
+
+  .mobile-track-image {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 8px !important;
+    flex-shrink: 0;
+  }
+
+  .mobile-track-details {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+  }
+
+  .mobile-track-title {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: white !important;
+    margin: 0 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-track-artist {
+    font-size: 12px !important;
+    color: rgba(255,255,255,0.7) !important;
+    margin: 0 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Contrôle de volume mobile */
+  .mobile-volume-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .mobile-volume-slider {
+    flex: 1;
+  }
+
+  .mobile-volume-slider .MuiSlider-thumb {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .mobile-volume-slider .MuiSlider-track {
+    height: 3px !important;
+  }
+
+  .mobile-volume-slider .MuiSlider-rail {
+    height: 3px !important;
+    opacity: 0.3 !important;
+  }
+
+  /* Correction du layout des autres composants */
+  .mobile-main-content {
+    padding-bottom: 200px !important; /* Espace pour le player fixe */
+  }
+
+  /* Search component mobile */
+  .mobile-search-container {
+    padding: 8px !important;
+  }
+
+  .mobile-search-results {
+    max-height: calc(100vh - 280px) !important;
+    overflow-y: auto;
+  }
+
+  /* Queue component mobile */
+  .mobile-queue-container {
+    max-height: calc(100vh - 280px) !important;
+    overflow-y: auto;
+  }
+
+  /* Chat component mobile */
+  .mobile-chat-container {
+    max-height: 250px !important;
+    overflow-y: auto;
+  }
+
+  /* Corrections des menus et popups */
+  .MuiMenu-paper {
+    max-width: calc(100vw - 32px) !important;
+  }
+
+  .MuiDialog-paper {
+    margin: 16px !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+
+  /* Correction des sliders MUI */
+  .MuiSlider-root {
+    touch-action: none !important;
+  }
+
+  /* Amélioration de la navigation tactile */
+  .MuiIconButton-root {
+    touch-action: manipulation !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+  }
+
+  /* Correction du scrolling */
+  body, html {
+    overflow-x: hidden !important;
+    position: relative !important;
+  }
+
+  /* Désactiver le zoom sur les inputs */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Correction des états de focus mobile */
+  .MuiButton-root:focus,
+  .MuiIconButton-root:focus {
+    outline: none !important;
+  }
+
+  /* Animation de tap mobile */
+  .MuiIconButton-root:active {
+    transform: scale(0.95) !important;
+    transition: transform 0.1s ease !important;
+  }
+
+  /* Correction du status de connexion mobile */
+  .mobile-connection-status {
+    position: fixed;
+    top: 8px;
+    right: 8px;
+    z-index: 1001;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+  }
+}
+
 /* Scrollbar personnalisée */
 ::-webkit-scrollbar {
   width: 6px;
@@ -142,5 +388,22 @@
   
   .search-results {
     max-height: 250px;
+  }
+  
+  /* Prévenir l'étirement horizontal avec les textes longs */
+  .MuiListItemText-root {
+    min-width: 0;
+    overflow: hidden;
+  }
+  
+  .MuiTypography-root {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  /* Contraindre tous les éléments dans la largeur de l'écran */
+  * {
+    max-width: 100vw;
+    box-sizing: border-box;
   }
 }

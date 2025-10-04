@@ -283,21 +283,30 @@ const SearchComponent = ({ socket, onTrackQueued }) => {
                     sx={{ 
                       color: 'white',
                       fontWeight: 'medium',
-                      fontSize: { xs: '0.9rem', sm: '1rem' }
+                      fontSize: { xs: '0.9rem', sm: '1rem' },
+                      maxWidth: { xs: 'calc(100vw - 150px)', sm: 'calc(100vw - 170px)' },
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
                     }}
                   >
                     {track.name}
                   </Typography>
                 }
                 secondary={
-                  <Box>
+                  <Box sx={{ 
+                    maxWidth: { xs: 'calc(100vw - 150px)', sm: 'calc(100vw - 170px)' },
+                    overflow: 'hidden'
+                  }}>
                     <Typography 
                       variant="body2" 
                       color="text.secondary" 
                       noWrap
                       sx={{ 
                         display: 'block',
-                        fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        maxWidth: '100%',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
                       }}
                     >
                       {track.artists?.map(artist => artist.name).join(', ')}

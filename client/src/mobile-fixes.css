@@ -1,0 +1,162 @@
+/* 
+ * Corrections spécifiques pour les problèmes d'interface mobile
+ * Prévention de l'étirement horizontal avec les titres longs
+ */
+
+/* Reset global pour mobile */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  
+  #root {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  
+  /* Contraintes globales pour les composants Material-UI */
+  .MuiContainer-root {
+    max-width: 100vw !important;
+    overflow-x: hidden;
+  }
+  
+  .MuiGrid-container {
+    max-width: 100vw !important;
+    overflow-x: hidden;
+  }
+  
+  .MuiCard-root {
+    max-width: 100vw !important;
+    overflow-x: hidden;
+  }
+  
+  /* Corrections spécifiques pour les listes */
+  .MuiList-root {
+    max-width: 100vw !important;
+    overflow-x: hidden;
+  }
+  
+  .MuiListItem-root {
+    max-width: 100vw !important;
+    overflow-x: hidden;
+    padding-right: 8px !important;
+  }
+  
+  .MuiListItemText-root {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    flex: 1 !important;
+  }
+  
+  .MuiListItemText-primary {
+    overflow: hidden !important;
+  }
+  
+  .MuiListItemText-secondary {
+    overflow: hidden !important;
+  }
+  
+  /* Corrections pour les textes longs */
+  .MuiTypography-root {
+    max-width: 100% !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+  
+  .MuiTypography-noWrap {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  
+  /* Corrections spécifiques pour les secondaryAction des ListItem */
+  .MuiListItem-secondaryAction {
+    position: relative !important;
+    transform: none !important;
+    top: auto !important;
+    right: auto !important;
+    padding-left: 8px;
+    flex-shrink: 0;
+  }
+  
+  /* Ajustements pour les avatars et icônes */
+  .MuiListItemAvatar-root {
+    min-width: auto !important;
+    margin-right: 12px !important;
+    flex-shrink: 0;
+  }
+  
+  .MuiAvatar-root {
+    flex-shrink: 0;
+  }
+  
+  /* Corrections pour les Chips et petits éléments */
+  .MuiChip-root {
+    max-width: 120px !important;
+    overflow: hidden !important;
+  }
+  
+  .MuiChip-label {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  
+  /* Layout fixes pour les flex containers */
+  .MuiBox-root {
+    min-width: 0;
+  }
+  
+  /* Fixes pour les TextField et inputs */
+  .MuiTextField-root {
+    max-width: 100% !important;
+  }
+  
+  .MuiInputBase-root {
+    max-width: 100% !important;
+  }
+  
+  /* Fixes pour les CardMedia */
+  .MuiCardMedia-root {
+    flex-shrink: 0 !important;
+  }
+}
+
+/* Corrections spécifiques pour les très petits écrans */
+@media (max-width: 480px) {
+  .MuiListItem-root {
+    padding-left: 8px !important;
+    padding-right: 4px !important;
+  }
+  
+  .MuiListItemText-root {
+    margin-right: 4px !important;
+  }
+  
+  /* Réduire encore plus l'espace pour les titres très longs */
+  .MuiTypography-subtitle1,
+  .MuiTypography-body1,
+  .MuiTypography-body2 {
+    font-size: 0.85rem !important;
+    line-height: 1.3 !important;
+  }
+}
+
+/* Animation de défilement pour les textes très longs (optionnel) */
+@keyframes scroll-text {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-30%); }
+  100% { transform: translateX(0); }
+}
+
+.long-text-scroll {
+  animation: scroll-text 3s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+/* Debug helpers (à retirer en production) */
+.debug-overflow {
+  border: 1px solid red !important;
+  overflow: visible !important;
+}

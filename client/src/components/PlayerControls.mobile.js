@@ -310,12 +310,17 @@ const PlayerControls = () => {
                 ml: { xs: 2, md: 2 }, 
                 minWidth: 0, 
                 flex: 1,
-                textAlign: { xs: 'left', md: 'left' }
+                textAlign: { xs: 'left', md: 'left' },
+                maxWidth: { xs: 'calc(100vw - 140px)', sm: 'calc(100vw - 160px)', md: 'auto' },
+                overflow: 'hidden'
               }}>
                 <Typography variant="subtitle1" noWrap sx={{ 
                   fontWeight: 'bold',
                   color: 'white',
-                  fontSize: { xs: '1rem', sm: '1.1rem' }
+                  fontSize: { xs: '1rem', sm: '1.1rem' },
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
                 }}>
                   {currentTrack.name}
                 </Typography>

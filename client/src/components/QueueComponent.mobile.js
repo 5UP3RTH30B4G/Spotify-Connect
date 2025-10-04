@@ -203,21 +203,30 @@ const QueueComponent = () => {
                       sx={{ 
                         color: 'white',
                         fontWeight: 'medium',
-                        fontSize: { xs: '0.875rem', sm: '0.9rem' }
+                        fontSize: { xs: '0.875rem', sm: '0.9rem' },
+                        maxWidth: { xs: 'calc(100vw - 180px)', sm: 'calc(100vw - 200px)' },
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
                       }}
                     >
                       {track.name}
                     </Typography>
                   }
                   secondary={
-                    <Box>
+                    <Box sx={{ 
+                      maxWidth: { xs: 'calc(100vw - 180px)', sm: 'calc(100vw - 200px)' },
+                      overflow: 'hidden'
+                    }}>
                       <Typography 
                         variant="caption" 
                         color="text.secondary" 
                         noWrap
                         sx={{ 
                           display: 'block',
-                          fontSize: { xs: '0.75rem', sm: '0.8rem' }
+                          fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                          maxWidth: '100%',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
                         }}
                       >
                         {track.artist}
@@ -289,7 +298,10 @@ const QueueComponent = () => {
                   }
                   sx={{ 
                     ml: { xs: 1, sm: 2 },
-                    mr: { xs: 0.5, sm: 1 }
+                    mr: { xs: 0.5, sm: 1 },
+                    minWidth: 0,
+                    flex: 1,
+                    overflow: 'hidden'
                   }}
                 />
               </ListItem>
