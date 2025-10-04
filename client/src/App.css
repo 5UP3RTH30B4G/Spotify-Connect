@@ -1,0 +1,146 @@
+.App {
+  text-align: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  padding: 20px;
+  color: white;
+}
+
+.App-link {
+  color: #1DB954;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Styles personnalisés pour l'application Spotify */
+.spotify-green {
+  color: #1DB954 !important;
+}
+
+.spotify-green-bg {
+  background-color: #1DB954 !important;
+}
+
+.track-item:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  cursor: pointer;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+.queue-item {
+  border-left: 3px solid #1DB954;
+  margin: 4px 0;
+}
+
+.currently-playing {
+  background: linear-gradient(90deg, rgba(29, 185, 84, 0.2) 0%, transparent 100%);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #1DB954;
+  transition: transform 0.2s ease;
+}
+
+.user-avatar:hover {
+  transform: scale(1.1);
+}
+
+.chat-container {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.search-results {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+/* Animation pour les nouveaux éléments */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Scrollbar personnalisée */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e1e1e;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1DB954;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1ed760;
+}
+
+/* Amélioration des transitions */
+.MuiPaper-root {
+  transition: box-shadow 0.3s ease, transform 0.2s ease !important;
+}
+
+.MuiPaper-root:hover {
+  box-shadow: 0 8px 25px rgba(29, 185, 84, 0.15) !important;
+}
+
+/* Style pour les boutons */
+.MuiIconButton-root {
+  transition: all 0.2s ease !important;
+}
+
+.MuiIconButton-root:hover {
+  transform: scale(1.05) !important;
+}
+
+/* Responsive design amélioré */
+@media (max-width: 768px) {
+  .chat-container {
+    max-height: 200px;
+  }
+  
+  .search-results {
+    max-height: 250px;
+  }
+}
