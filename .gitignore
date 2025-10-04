@@ -104,3 +104,6 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+# Wiki pages
+wiki/
