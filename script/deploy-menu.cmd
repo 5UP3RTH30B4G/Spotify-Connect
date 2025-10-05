@@ -1,26 +1,22 @@
 @echo off
-echo.
-echo =============================================
-echo    🎵 SPOTIFY CONNECT - DÉPLOIEMENT SSH
-echo =============================================
-echo.
-echo Système de déploiement avec authentification SSH par mot de passe
-echo.
+chcp 65001 >nul
+setlocal enabledelayedexpansion
 
 :MENU
+cls
 echo.
-echo 📋 Menu principal:
+echo [Menu principal]
 echo.
-echo 1. ⚙️  Configurer le serveur de déploiement
-echo 2. � Gérer le mot de passe SSH (sauvegarder/tester)
-echo 3. �🔍 Tester la connexion SSH
-echo 4. 🏗️  Construire l'application (npm run build)
-echo 5. 🚀 Déployer l'application (automatique)
-echo 6. 📊 Voir les logs et gérer l'application
-echo 7. 🔧 Configurer les clés Spotify (via SSH)
-echo 8. ❓ Aide et documentation
-echo 9. 🔑 Configurer les clés SSH
-echo 0. 🚪 Quitter
+echo 1. Configurer le serveur de deploiement
+echo 2. Gerer le mot de passe SSH (sauvegarder/tester)
+echo 3. Tester la connexion SSH
+echo 4. Construire l'application (npm run build)
+echo 5. Deployer l'application (automatique)
+echo 6. Voir les logs et gerer l'application
+echo 7. Configurer les cles Spotify (via SSH)
+echo 8. Aide et documentation
+echo 9. Configurer les cles SSH
+echo 0. Quitter
 echo.
 
 set /p "CHOICE=Votre choix (0-9): "
@@ -36,71 +32,79 @@ if "%CHOICE%"=="8" goto HELP
 if "%CHOICE%"=="9" goto SSH_KEYS
 if "%CHOICE%"=="0" goto EXIT
 
-echo ❌ Choix invalide
+echo [X] Choix invalide
+pause
 goto MENU
 
 :CONFIGURE
 echo.
-echo ⚙️  Configuration du serveur...
-call configure-ssh.cmd
+echo Configuration du serveur...
+call "%~dp0configure-ssh.cmd"
+pause
 goto MENU
 
 :PASSWORD_MANAGER
 echo.
-echo 🔐 Gestion du mot de passe SSH...
-call ssh-password-manager.cmd
+echo Gestion du mot de passe SSH...
+call "%~dp0ssh-password-manager.cmd"
+pause
 goto MENU
 
 :TEST
 echo.
-echo 🔍 Test de connexion...
-call test-ssh.cmd
+echo Test de connexion...
+call "%~dp0test-ssh.cmd"
+pause
 goto MENU
 
 :BUILD
 echo.
-echo 🏗️  Construction de l'application...
+echo Construction de l'application...
 echo.
-if not exist "..\client\package.json" (
-    echo ❌ Répertoire client non trouvé
+if not exist "%~dp0..\client\package.json" (
+    echo [X] Repertoire client non trouve
     pause
     goto MENU
 )
 
-echo 📦 Build du client React...
-cd ..\client
+echo Build du client React...
+cd /d "%~dp0..\client"
 call npm run build
 if %errorlevel% equ 0 (
-    echo ✅ Build réussi!
+    echo [OK] Build reussi!
 ) else (
-    echo ❌ Erreur lors du build
+    echo [X] Erreur lors du build
     pause
 )
-cd ..\script
+cd /d "%~dp0"
+pause
 goto MENU
 
 :DEPLOY
 echo.
-echo 🚀 Déploiement de l'application...
-call deploy-auto.cmd
+echo Deploiement de l'application...
+call "%~dp0deploy-auto.cmd"
+pause
 goto MENU
 
 :LOGS
 echo.
-echo 📊 Gestion de l'application...
-call logs-ssh.cmd
+echo Gestion de l'application...
+call "%~dp0logs-ssh.cmd"
+pause
 goto MENU
 
+:ENV_CONFIG
 echo.
 echo 🔧 Configuration des clés Spotify...
-if not exist "deploy-config.env" (
+if not exist "%~dp0deploy-config.env" (
     echo ❌ Configuration de déploiement non trouvée
     echo    Configurez d'abord le serveur (option 1)
     pause
     goto MENU
 )
 
-for /f "usebackq tokens=1,2 delims==" %%A in ("deploy-config.env") do (
+for /f "usebackq tokens=1,2 delims==" %%A in ("%~dp0deploy-config.env") do (
     if "%%A"=="DEPLOY_HOST" set "DEPLOY_HOST=%%B"
     if "%%A"=="DEPLOY_USER" set "DEPLOY_USER=%%B"
     if "%%A"=="DEPLOY_PATH" set "DEPLOY_PATH=%%B"
@@ -119,60 +123,31 @@ echo 📡 Connexion au serveur...
 echo @echo off > temp_env_config.cmd
 echo set "CLIENT_ID=%CLIENT_ID%" >> temp_env_config.cmd
 echo set "CLIENT_SECRET=%CLIENT_SECRET%" >> temp_env_config.cmd
-echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo 'Configuration du fichier .env...' && if [ -f '.env' ]; then cp .env .env.backup.$(date +%%%%Y%%%%m%%%%d-%%%%H%%%%M%%%%S); fi && cat ^> .env ^<^< 'EOF' >> temp_env_config.cmd
-echo # Spotify API Configuration >> temp_env_config.cmd
-echo SPOTIFY_CLIENT_ID=%CLIENT_ID% >> temp_env_config.cmd
-echo SPOTIFY_CLIENT_SECRET=%CLIENT_SECRET% >> temp_env_config.cmd
-echo SPOTIFY_REDIRECT_URI=https://%DEPLOY_HOST%/auth/callback >> temp_env_config.cmd
-echo. >> temp_env_config.cmd
-echo # Server Configuration >> temp_env_config.cmd
-echo PORT=3001 >> temp_env_config.cmd
-echo NODE_ENV=production >> temp_env_config.cmd
-echo. >> temp_env_config.cmd
-echo # Session Configuration >> temp_env_config.cmd
-echo SESSION_SECRET=spotify_connect_secret_$(date +%%%%s) >> temp_env_config.cmd
-echo. >> temp_env_config.cmd
-echo # Frontend URL >> temp_env_config.cmd
-echo CLIENT_URL=https://%DEPLOY_HOST% >> temp_env_config.cmd
-echo EOF >> temp_env_config.cmd
-echo && echo '✅ Fichier .env configuré!' && echo 'Redémarrage de l application...' && cd %DEPLOY_PATH% && pm2 restart spotify-connect && pm2 status" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo 'Configuration du fichier .env...' && if [ -f '.env' ]; then cp .env .env.backup.$(date +%%%%Y%%%%m%%%%d-%%%%H%%%%M%%%%S); fi && echo '# Spotify API Configuration' ^> .env" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo 'SPOTIFY_CLIENT_ID=%CLIENT_ID%' ^>^> .env" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo 'SPOTIFY_CLIENT_SECRET=%CLIENT_SECRET%' ^>^> .env" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo 'SPOTIFY_REDIRECT_URI=https://%DEPLOY_HOST%/auth/callback' ^>^> .env" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo '' ^>^> .env" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo '# Server Configuration' ^>^> .env" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo 'PORT=3001' ^>^> .env" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo 'NODE_ENV=production' ^>^> .env" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo '' ^>^> .env" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo '# Session Configuration' ^>^> .env" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo 'SESSION_SECRET=spotify_connect_secret_$(date +%%%%s)' ^>^> .env" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo '' ^>^> .env" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo '# Frontend URL' ^>^> .env" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo 'CLIENT_URL=https://%DEPLOY_HOST%' ^>^> .env && echo '✅ Fichier .env configuré!' && echo 'Redémarrage de l application...' && cd %DEPLOY_PATH% && pm2 restart spotify-connect && pm2 status" >> temp_env_config.cmd
 
 :: Vérifier si le mot de passe SSH est sauvegardé pour utilisation automatique
-if exist "ssh-credentials.dat" (
+if exist "%~dp0ssh-credentials.dat" (
     echo ✅ Utilisation du mot de passe SSH sauvegardé...
-    call ssh-password-manager.cmd auto-exec temp_env_config.cmd
+    call "%~dp0ssh-password-manager.cmd" auto-exec temp_env_config.cmd
 ) else (
     echo ⚠️ Mot de passe SSH non sauvegardé - saisie manuelle requise
     call temp_env_config.cmd
 )
 
 if exist "temp_env_config.cmd" del temp_env_config.cmd
-fi
-
-# Créer le nouveau .env
-cat > .env << 'EOF'
-# Spotify API Configuration
-SPOTIFY_CLIENT_ID=%CLIENT_ID%
-SPOTIFY_CLIENT_SECRET=%CLIENT_SECRET%
-SPOTIFY_REDIRECT_URI=https://%DEPLOY_HOST%/auth/callback
-
-# Server Configuration
-PORT=3001
-NODE_ENV=production
-
-# Session Configuration
-SESSION_SECRET=spotify_connect_secret_$(date +%%s)
-
-# Frontend URL
-CLIENT_URL=https://%DEPLOY_HOST%
-EOF
-
-echo '✅ Fichier .env configuré!'
-echo 'Redémarrage de l\'application...'
-cd %DEPLOY_PATH%
-pm2 restart spotify-connect
-pm2 status
-"
 
 echo.
 echo ✅ Configuration terminée!
@@ -225,12 +200,14 @@ goto MENU
 
 :SSH_KEYS
 echo.
-echo 🔑 Configuration des clés SSH...
-call setup-ssh-keys.cmd
+echo Configuration des cles SSH...
+call "%~dp0setup-ssh-keys.cmd"
+pause
 goto MENU
 
 :EXIT
 echo.
-echo 👋 Au revoir!
+echo Au revoir!
 echo.
+pause
 exit /b 0

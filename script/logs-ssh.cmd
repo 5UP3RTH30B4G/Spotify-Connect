@@ -48,74 +48,122 @@ exit /b 1
 :STATUS
 echo.
 echo 📊 Statut de l'application...
-ssh -o PreferredAuthentications=password %DEPLOY_USER%@%DEPLOY_HOST% "
-echo '🔍 Statut PM2:'
-pm2 status
 
-echo ''
-echo '📝 Logs récents (50 dernières lignes):'
-pm2 logs spotify-connect --lines 50 --nostream 2>/dev/null || echo 'Aucun log disponible'
+:: Créer un script temporaire pour les commandes SSH
+echo @echo off > temp_status.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "echo '🔍 Statut PM2:' && pm2 status && echo '' && echo '📝 Logs récents (50 dernières lignes):' && pm2 logs spotify-connect --lines 50 --nostream 2>/dev/null || echo 'Aucun log disponible' && echo '' && echo '💾 Utilisation mémoire:' && pm2 monit --no-colors 2>/dev/null | head -10 || echo 'Info mémoire non disponible' && echo '' && echo '🌐 Test de connectivité locale:' && curl -s http://127.0.0.1:3001 >/dev/null && echo '✅ Application répond sur port 3001' || echo '❌ Application ne répond pas'" >> temp_status.cmd
 
-echo ''
-echo '💾 Utilisation mémoire:'
-pm2 monit --no-colors 2>/dev/null | head -10 || echo 'Info mémoire non disponible'
+:: Utiliser le gestionnaire de mots de passe si disponible
+if exist "ssh-credentials.dat" (
+    echo ✅ Utilisation du mot de passe SSH sauvegardé...
+    call ssh-password-manager.cmd auto-exec temp_status.cmd
+) else (
+    echo ⚠️ Mot de passe SSH non sauvegardé - saisie manuelle requise
+    call temp_status.cmd
+)
 
-echo ''
-echo '🌐 Test de connectivité locale:'
-curl -s http://localhost:3001 >/dev/null && echo '✅ Application répond sur port 3001' || echo '❌ Application ne répond pas'
-"
+if exist "temp_status.cmd" del temp_status.cmd
 goto END
 
 :REALTIME
 echo.
 echo 📡 Logs en temps réel (Ctrl+C pour arrêter)...
 echo.
-ssh -o PreferredAuthentications=password %DEPLOY_USER%@%DEPLOY_HOST% "pm2 logs spotify-connect"
+
+:: Créer un script temporaire pour les logs en temps réel
+echo @echo off > temp_realtime.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "pm2 logs spotify-connect" >> temp_realtime.cmd
+
+:: Utiliser le gestionnaire de mots de passe si disponible
+if exist "ssh-credentials.dat" (
+    echo ✅ Utilisation du mot de passe SSH sauvegardé...
+    call ssh-password-manager.cmd auto-exec temp_realtime.cmd
+) else (
+    echo ⚠️ Mot de passe SSH non sauvegardé - saisie manuelle requise
+    call temp_realtime.cmd
+)
+
+if exist "temp_realtime.cmd" del temp_realtime.cmd
 goto END
 
 :ERRORS
 echo.
 echo ❌ Logs d'erreur uniquement...
-ssh -o PreferredAuthentications=password %DEPLOY_USER%@%DEPLOY_HOST% "
-echo 'Erreurs PM2:'
-pm2 logs spotify-connect --err --lines 50 --nostream 2>/dev/null || echo 'Aucune erreur PM2'
 
-echo ''
-echo 'Erreurs système:'
-journalctl -u nginx --no-pager -n 20 2>/dev/null || echo 'Logs nginx non disponibles'
-"
+:: Créer un script temporaire pour les erreurs
+echo @echo off > temp_errors.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "echo 'Erreurs PM2:' && pm2 logs spotify-connect --err --lines 50 --nostream 2>/dev/null || echo 'Aucune erreur PM2' && echo '' && echo 'Erreurs système:' && journalctl -u nginx --no-pager -n 20 2>/dev/null || echo 'Logs nginx non disponibles'" >> temp_errors.cmd
+
+:: Utiliser le gestionnaire de mots de passe si disponible
+if exist "ssh-credentials.dat" (
+    echo ✅ Utilisation du mot de passe SSH sauvegardé...
+    call ssh-password-manager.cmd auto-exec temp_errors.cmd
+) else (
+    echo ⚠️ Mot de passe SSH non sauvegardé - saisie manuelle requise
+    call temp_errors.cmd
+)
+
+if exist "temp_errors.cmd" del temp_errors.cmd
 goto END
 
 :RESTART
 echo.
 echo 🔄 Redémarrage de l'application...
-ssh -o PreferredAuthentications=password %DEPLOY_USER%@%DEPLOY_HOST% "
-cd %DEPLOY_PATH%
-pm2 restart spotify-connect
-echo 'Application redémarrée!'
-pm2 status
-"
+
+:: Créer un script temporaire pour le redémarrage
+echo @echo off > temp_restart.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH% && pm2 restart spotify-connect && echo 'Application redémarrée!' && pm2 status" >> temp_restart.cmd
+
+:: Utiliser le gestionnaire de mots de passe si disponible
+if exist "ssh-credentials.dat" (
+    echo ✅ Utilisation du mot de passe SSH sauvegardé...
+    call ssh-password-manager.cmd auto-exec temp_restart.cmd
+) else (
+    echo ⚠️ Mot de passe SSH non sauvegardé - saisie manuelle requise
+    call temp_restart.cmd
+)
+
+if exist "temp_restart.cmd" del temp_restart.cmd
 goto END
 
 :STOP
 echo.
 echo ⏹️  Arrêt de l'application...
-ssh -o PreferredAuthentications=password %DEPLOY_USER%@%DEPLOY_HOST% "
-pm2 stop spotify-connect
-echo 'Application arrêtée!'
-pm2 status
-"
+
+:: Créer un script temporaire pour l'arrêt
+echo @echo off > temp_stop.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "pm2 stop spotify-connect && echo 'Application arrêtée!' && pm2 status" >> temp_stop.cmd
+
+:: Utiliser le gestionnaire de mots de passe si disponible
+if exist "ssh-credentials.dat" (
+    echo ✅ Utilisation du mot de passe SSH sauvegardé...
+    call ssh-password-manager.cmd auto-exec temp_stop.cmd
+) else (
+    echo ⚠️ Mot de passe SSH non sauvegardé - saisie manuelle requise
+    call temp_stop.cmd
+)
+
+if exist "temp_stop.cmd" del temp_stop.cmd
 goto END
 
 :START
 echo.
 echo ▶️  Démarrage de l'application...
-ssh -o PreferredAuthentications=password %DEPLOY_USER%@%DEPLOY_HOST% "
-cd %DEPLOY_PATH%
-pm2 start ecosystem.config.js
-echo 'Application démarrée!'
-pm2 status
-"
+
+:: Créer un script temporaire pour le démarrage
+echo @echo off > temp_start.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH% && pm2 start ecosystem.config.js && echo 'Application démarrée!' && pm2 status" >> temp_start.cmd
+
+:: Utiliser le gestionnaire de mots de passe si disponible
+if exist "ssh-credentials.dat" (
+    echo ✅ Utilisation du mot de passe SSH sauvegardé...
+    call ssh-password-manager.cmd auto-exec temp_start.cmd
+) else (
+    echo ⚠️ Mot de passe SSH non sauvegardé - saisie manuelle requise
+    call temp_start.cmd
+)
+
+if exist "temp_start.cmd" del temp_start.cmd
 goto END
 
 :END

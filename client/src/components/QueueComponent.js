@@ -14,7 +14,7 @@ import { Remove, MusicNote, PlayArrow } from '@mui/icons-material';
 import { useSocket } from '../contexts/SocketContext';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://scpearth.fr:5000';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL;
 
 const QueueComponent = () => {
   const { playbackState, emitTrackRemovedFromQueue } = useSocket();
@@ -199,8 +199,7 @@ const QueueComponent = () => {
                   primary={
                     <Typography 
                       variant="body2" 
-                      noWrap 
-                      sx={{ 
+                      sx={{
                         color: 'white',
                         fontWeight: 'medium',
                         fontSize: { xs: '0.875rem', sm: '0.9rem' }
@@ -214,8 +213,7 @@ const QueueComponent = () => {
                       <Typography 
                         variant="caption" 
                         color="text.secondary" 
-                        noWrap
-                        sx={{ 
+                        sx={{
                           display: 'block',
                           fontSize: { xs: '0.75rem', sm: '0.8rem' }
                         }}
@@ -297,40 +295,11 @@ const QueueComponent = () => {
           </List>
         </>
       ) : (
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          height: '100%',
-          textAlign: 'center',
-          px: { xs: 2, sm: 3 }
-        }}>
-          <MusicNote sx={{ 
-            fontSize: { xs: 40, sm: 48 }, 
-            color: 'text.secondary', 
-            mb: 2 
-          }} />
-          <Typography 
-            variant="h6" 
-            color="text.secondary" 
-            sx={{ 
-              mb: 1,
-              fontSize: { xs: '1.1rem', sm: '1.25rem' }
-            }}
-          >
-            File d'attente vide
-          </Typography>
-          <Typography 
-            variant="body2" 
-            color="text.secondary"
-            sx={{ 
-              fontSize: { xs: '0.875rem', sm: '0.875rem' }
-            }}
-          >
-            Recherchez et ajoutez des chansons pour commencer !
-          </Typography>
-        </Box>
+        <div className="queue-empty">
+          <div className="queue-empty-icon">🎵</div>
+          <h3>File d'attente vide</h3>
+          <p>Recherchez et ajoutez des chansons pour commencer !</p>
+        </div>
       )}
     </Box>
   );

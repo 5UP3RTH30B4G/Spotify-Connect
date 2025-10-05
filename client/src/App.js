@@ -8,7 +8,7 @@ import LoginPage from './components/LoginPage';
 import MainApp from './components/MainApp';
 import { AuthProvider } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
-import './App.css';
+import './styles/theme.css';
 
 const darkTheme = createTheme({
   palette: {
@@ -34,7 +34,9 @@ function App() {
 
   useEffect(() => {
     // Initialiser la connexion Socket.IO
-    const newSocket = io(process.env.REACT_APP_SERVER_URL || 'https://scpearth.fr:5000');
+    // Prefer explicit server socket URL, fallback to API base URL or existing hardcoded
+    const serverUrl = process.env.REACT_APP_SERVER_URL || process.env.REACT_APP_API_BASE_URL;
+    const newSocket = io(serverUrl);
     setSocket(newSocket);
 
     return () => {
@@ -50,7 +52,7 @@ function App() {
       <AuthProvider>
         <SocketProvider socket={socket}>
           <Router>
-            <div className="App">
+            <div className="App app-shell">
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/" element={<MainApp />} />

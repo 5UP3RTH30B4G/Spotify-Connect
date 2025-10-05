@@ -1,0 +1,708 @@
+/* Spotify Connect - Interface Moderne 2025 */
+
+/* === RESET & BASE === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  font-family: 'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #0a0a0a;
+  color: #ffffff;
+  overflow-x: hidden;
+}
+
+/* === APP CONTAINER === */
+.app-container {
+  min-height: 100vh;
+  background: linear-gradient(145deg, #0a0a0a 0%, #121212 50%, #1a1a1a 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+/* === LOADING SCREEN === */
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #0a0a0a;
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #1e1e1e;
+  border-top: 4px solid #1DB954;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-screen p {
+  color: #b3b3b3;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+/* === HEADER === */
+.app-header {
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 70px;
+}
+
+.logo-section {
+  flex: 1;
+}
+
+.app-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1DB954;
+  margin: 0;
+}
+
+.header-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.connection-status.connected {
+  background: rgba(29, 185, 84, 0.2);
+  color: #1DB954;
+}
+
+.connection-status.disconnected {
+  background: rgba(255, 82, 82, 0.2);
+  color: #ff5252;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #1DB954;
+}
+
+.user-name {
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.logout-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 82, 82, 0.2);
+  color: #ff5252;
+}
+
+/* === MAIN CONTENT === */
+.app-main {
+  flex: 1;
+  padding: 20px;
+}
+
+.main-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* === PLAYER SECTION === */
+.player-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+/* === CONTENT GRID === */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* === SECTIONS === */
+.search-section,
+.queue-section,
+.users-section,
+.chat-section {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.search-section:hover,
+.queue-section:hover,
+.users-section:hover,
+.chat-section:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(29, 185, 84, 0.3);
+}
+
+.section-header {
+  background: rgba(29, 185, 84, 0.1);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.section-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1DB954;
+  margin: 0;
+}
+
+.queue-count,
+.user-count {
+  background: rgba(29, 185, 84, 0.2);
+  color: #1DB954;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.section-content {
+  padding: 20px;
+  min-height: 200px;
+}
+
+/* === QUEUE EMPTY STATE === */
+.queue-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  text-align: center;
+  color: #b3b3b3;
+}
+
+.queue-empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.queue-empty h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #ffffff;
+}
+
+.queue-empty p {
+  font-size: 14px;
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* === RESPONSIVE DESIGN === */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0 15px;
+  }
+  
+  .header-content {
+    height: 60px;
+  }
+  
+  .app-title {
+    font-size: 20px;
+  }
+  
+  .header-info {
+    gap: 10px;
+  }
+  
+  .user-name {
+    display: none;
+  }
+  
+  .app-main {
+    padding: 15px;
+  }
+  
+  .content-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .player-section {
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  
+  .section-content {
+    padding: 15px;
+    min-height: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 0 10px;
+  }
+  
+  .header-content {
+    height: 55px;
+  }
+  
+  .app-title {
+    font-size: 18px;
+  }
+  
+  .connection-status {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .logout-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .app-main {
+    padding: 10px;
+  }
+  
+  .player-section {
+    padding: 12px;
+    margin-bottom: 15px;
+  }
+  
+  .section-header {
+    padding: 12px 15px;
+  }
+  
+  .section-header h2 {
+    font-size: 16px;
+  }
+  
+  .section-content {
+    padding: 12px;
+  }
+}
+
+/* === UTILITIES === */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mb-1 { margin-bottom: 8px; }
+.mb-2 { margin-bottom: 16px; }
+.mb-3 { margin-bottom: 24px; }
+
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }
+
+.p-1 { padding: 8px; }
+.p-2 { padding: 16px; }
+.p-3 { padding: 24px; }
+
+.spotify-green { color: #1DB954; }
+.spotify-green-bg { background-color: #1DB954; }
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* === SCROLLBAR === */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1DB954;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1ed760;
+}
+
+/* === PLAYER CONTROLS === */
+.player-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.track-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.track-artwork {
+  flex-shrink: 0;
+}
+
+.artwork-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.track-details {
+  flex: 1;
+  text-align: left;
+}
+
+.track-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track-artist {
+  font-size: 14px;
+  color: #b3b3b3;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playback-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+
+.control-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 20px;
+}
+
+.control-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.play-pause-btn {
+  width: 60px;
+  height: 60px;
+  background: #1DB954;
+  font-size: 24px;
+}
+
+.play-pause-btn:hover {
+  background: #1ed760;
+}
+
+.progress-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.time-display {
+  font-size: 12px;
+  color: #b3b3b3;
+  width: 40px;
+  text-align: center;
+}
+
+.progress-bar-container {
+  flex: 1;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #1DB954;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.secondary-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 150px;
+}
+
+.volume-icon {
+  font-size: 16px;
+}
+
+.volume-slider {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #1DB954;
+  cursor: pointer;
+}
+
+.devices-control {
+  position: relative;
+}
+
+.devices-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.devices-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.devices-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: rgba(30, 30, 30, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  min-width: 200px;
+  z-index: 50;
+  margin-top: 8px;
+}
+
+.device-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.device-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.device-item.active {
+  background: rgba(29, 185, 84, 0.2);
+  color: #1DB954;
+}
+
+.device-name {
+  font-weight: 500;
+}
+
+.device-type {
+  font-size: 12px;
+  color: #b3b3b3;
+}
+
+.no-track {
+  text-align: center;
+  padding: 40px 20px;
+  color: #b3b3b3;
+}
+
+.no-track-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.no-track h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.no-track p {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* === RESPONSIVE PLAYER === */
+@media (max-width: 768px) {
+  .track-info {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .artwork-image {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .track-title {
+    font-size: 16px;
+  }
+  
+  .track-artist {
+    font-size: 12px;
+  }
+  
+  .playback-controls {
+    gap: 12px;
+  }
+  
+  .control-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+  
+  .play-pause-btn {
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
+  }
+  
+  .secondary-controls {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .volume-control {
+    max-width: none;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .track-info {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .secondary-controls {
+    gap: 8px;
+  }
+  
+  .time-display {
+    width: 35px;
+    font-size: 10px;
+  }
+}

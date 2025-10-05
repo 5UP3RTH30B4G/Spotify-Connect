@@ -109,6 +109,23 @@ const socketHandler = (io) => {
       socket.broadcast.emit('playback_state_updated', currentPlaybackState);
     });
 
+    // Événement pour jouer automatiquement la prochaine chanson de la queue
+    socket.on('play_next_from_queue', () => {
+      const user = connectedUsers.get(socket.id);
+      if (!user) return;
+
+      if (currentPlaybackState.queue.length > 0) {
+        const nextTrack = currentPlaybackState.queue[0];
+        console.log(`🎵 Lecture automatique de la prochaine chanson: ${nextTrack.name}`);
+        
+        // Informer tous les clients de jouer cette chanson
+        io.emit('play_track_from_queue', {
+          track: nextTrack,
+          requestedBy: user.name
+        });
+      }
+    });
+
     // Événement de contrôle de lecture (play/pause/next/previous)
     socket.on('playback_control', (action) => {
       const user = connectedUsers.get(socket.id);
@@ -116,11 +133,27 @@ const socketHandler = (io) => {
 
       console.log(`🎮 Action ${action.type} par ${user.name}`);
 
+      // Logique spéciale pour les actions next/skip
+      if (action.type === 'next' && currentPlaybackState.queue.length > 0) {
+        // Supprimer la première chanson de la queue (celle qui vient d'être jouée/skippée)
+        const removedTrack = currentPlaybackState.queue.shift();
+        console.log(`📋 Suppression automatique de la queue: ${removedTrack?.name}`);
+        
+        // Informer tous les clients de la mise à jour de la queue
+        io.emit('queue_updated', {
+          queue: currentPlaybackState.queue,
+          removedTrack: removedTrack,
+          removedBy: 'System (next)',
+          autoRemoved: true
+        });
+      }
+
       // Diffuser l'action à tous les clients
       io.emit('playback_control_received', {
         action: action.type,
         user: user.name,
-        timestamp: new Date()
+        timestamp: new Date(),
+        queueLength: currentPlaybackState.queue.length
       });
 
       // Mettre à jour le contrôleur actuel

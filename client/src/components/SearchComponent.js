@@ -14,12 +14,14 @@ import {
 } from '@mui/material';
 import { Search, Add } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { useSocket } from '../contexts/SocketContext';
 
-const SearchComponent = ({ socket, onTrackQueued }) => {
+const SearchComponent = ({ onTrackQueued }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const { API_BASE_URL } = useAuth();
+  const { socket } = useSocket();
 
   const emitTrackQueued = useCallback((track) => {
     console.log('🔌 Socket disponible:', !!socket);
@@ -299,8 +301,7 @@ const SearchComponent = ({ socket, onTrackQueued }) => {
                 primary={
                   <Typography 
                     variant="body1" 
-                    noWrap 
-                    sx={{ 
+                    sx={{
                       color: 'white',
                       fontWeight: 'medium',
                       fontSize: { xs: '0.9rem', sm: '1rem' }
@@ -314,8 +315,7 @@ const SearchComponent = ({ socket, onTrackQueued }) => {
                     <Typography 
                       variant="body2" 
                       color="text.secondary" 
-                      noWrap
-                      sx={{ 
+                      sx={{
                         display: 'block',
                         fontSize: { xs: '0.8rem', sm: '0.875rem' }
                       }}

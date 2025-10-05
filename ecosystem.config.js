@@ -6,11 +6,11 @@ module.exports = {
     env: {
       NODE_ENV: 'production',
       PORT: 5000,
-      CLIENT_URL: 'https://scpearth.fr:3000',
-      SPOTIFY_CLIENT_ID: '887b364542194ea6b131edeaddadaa0d',
-      SPOTIFY_CLIENT_SECRET: 'b4db5d38adaa49319201ea69baa0c9bf',
-      SPOTIFY_REDIRECT_URI: 'https://scpearth.fr:5000/auth/callback',
-      API_BASE_URL: 'https://scpearth.fr:5000'
+      CLIENT_URL: process.env.CLIENT_URL ,
+      SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
+      SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,
+      SPOTIFY_REDIRECT_URI: process.env.SPOTIFY_REDIRECT_URI,
+      API_BASE_URL: process.env.API_BASE_URL
     },
     instances: 1,
     exec_mode: 'fork',

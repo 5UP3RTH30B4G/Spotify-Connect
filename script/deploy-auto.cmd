@@ -1,13 +1,16 @@
 @echo off
 setlocal enabledelayedexpansion
 
+REM Changer vers le répertoire racine du projet (parent du répertoire script)
+cd /d "%~dp0.."
+
 echo.
 echo ============================================
 echo    🚀 DEPLOIEMENT SPOTIFY CONNECT (AUTO)
 echo ============================================
 
 REM Lecture de la configuration
-if not exist "deploy-config.env" (
+if not exist "script\deploy-config.env" (
     echo ❌ Fichier deploy-config.env introuvable
     echo    Exécutez d'abord: configure-ssh.cmd
     pause
@@ -15,7 +18,7 @@ if not exist "deploy-config.env" (
 )
 
 echo 📖 Lecture de la configuration...
-for /f "usebackq tokens=1,2 delims==" %%A in ("deploy-config.env") do (
+for /f "usebackq tokens=1,2 delims==" %%A in ("script\deploy-config.env") do (
     if not "%%A"=="" if not "%%A"=="REM" if not "%%A"=="#" (
         set "%%A=%%B"
         echo    %%A = %%B
@@ -83,17 +86,17 @@ if exist "ssh-credentials.dat" (
 REM Définir les commandes selon le mode d'authentification
 if "%AUTH_MODE%"=="SSH_KEY" (
     echo 🔑 Mode clé SSH - authentification transparente
-    set "SSH_CMD_PREFIX=ssh"
-    set "SCP_CMD_PREFIX=scp"
+    set "SSH_CMD_PREFIX=ssh -o ConnectTimeout=30 -o ServerAliveInterval=60"
+    set "SCP_CMD_PREFIX=scp -o ConnectTimeout=30 -o ServerAliveInterval=60"
 ) else if "%AUTH_MODE%"=="PASSWORD" (
     echo 🔐 Mode mot de passe sauvegardé
-    REM Les variables SSH_CMD_PREFIX et SCP_CMD_PREFIX sont déjà définies ci-dessus
+    REM Les variables SSH_CMD_PREFIX et SCP_CMD_PREFIX sont déjà définies ci-dessus avec timeouts
 )
 
 REM Vérifier que le build client existe
-if not exist "..\client\build" (
+if not exist "client\build" (
     echo ❌ Build du client non trouvé
-    echo    Exécutez d'abord: cd ..\client && npm run build
+    echo    Exécutez d'abord: cd client; npm run build
     pause
     exit /b 1
 )
@@ -108,21 +111,100 @@ echo 💾 Étape 2: Sauvegarde de l'installation existante...
 
 echo.
 echo 📁 Étape 3: Transfert du client (build optimisé)...
-!SCP_CMD_PREFIX! -r ..\client\build %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/client-build
-!SCP_CMD_PREFIX! ..\client\package.json %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/
+!SCP_CMD_PREFIX! -r client\build %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/client-build
+!SCP_CMD_PREFIX! client\package.json %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/
 
 echo.
 echo 📁 Étape 4: Transfert du serveur (sans node_modules)...
+echo   📂 Création du répertoire serveur...
 !SSH_CMD_PREFIX! %DEPLOY_USER%@%DEPLOY_HOST% "mkdir -p %DEPLOY_PATH%/server"
-!SCP_CMD_PREFIX! ..\server\*.js %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/server/ 2>nul || echo "Certains fichiers .js ignorés"
-!SCP_CMD_PREFIX! ..\server\package*.json %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/server/
-!SCP_CMD_PREFIX! -r ..\server\routes %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/server/
-!SCP_CMD_PREFIX! -r ..\server\socket %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/server/
+if %errorlevel% neq 0 (
+    echo ❌ Échec de création du répertoire serveur
+    pause
+    exit /b 1
+)
+
+REM Transfert des fichiers JS principaux
+echo   📄 Transfert de index.js...
+!SCP_CMD_PREFIX! server\index.js %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/server/
+if %errorlevel% neq 0 (
+    echo ❌ Échec du transfert de index.js
+    pause
+    exit /b 1
+)
+
+echo   📄 Transfert de ssl-config.js (optionnel)...
+!SCP_CMD_PREFIX! server\ssl-config.js %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/server/ 2>nul || echo "     ssl-config.js ignoré (pas trouvé)"
+
+REM Transfert des fichiers package
+echo   📄 Transfert de package.json...
+!SCP_CMD_PREFIX! server\package.json %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/server/
+if %errorlevel% neq 0 (
+    echo ❌ Échec du transfert de package.json
+    pause
+    exit /b 1
+)
+
+echo   📄 Transfert de package-lock.json (optionnel)...
+echo      - package-lock.json (optionnel)
+!SCP_CMD_PREFIX! server\package-lock.json %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/server/ 2>nul || echo "     package-lock.json ignoré (pas trouvé)"
+
+echo   📂 Transfert du dossier routes...
+!SCP_CMD_PREFIX! -r server\routes %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/server/
+if %errorlevel% neq 0 (
+    echo ❌ Échec de transfert du dossier routes
+    echo 💡 Vérifiez que le dossier server\routes existe
+    pause
+    exit /b 1
+)
+
+echo   🔌 Transfert du dossier socket...
+!SCP_CMD_PREFIX! -r server\socket %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/server/
+if %errorlevel% neq 0 (
+    echo ❌ Échec de transfert du dossier socket
+    echo 💡 Vérifiez que le dossier server\socket existe
+    pause
+    exit /b 1
+)
+
+echo   🛠️ Transfert du dossier utils (optionnel)...
+!SCP_CMD_PREFIX! -r server\utils %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/server/ 2>nul || echo "     utils ignoré (pas trouvé)"
+
+echo.
+echo 📁 Étape 5: Transfert des fichiers de configuration racine...
+echo   🗃️ ecosystem.config.js et package.json...
+!SCP_CMD_PREFIX! ecosystem.config.js %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/
+!SCP_CMD_PREFIX! package.json %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/
+
+REM Transfert des dossiers
+echo   📁 Transfert du dossier routes...
+!SCP_CMD_PREFIX! -r server\routes %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/server/
+if %errorlevel% neq 0 (
+    echo ❌ Échec du transfert du dossier routes
+    echo 💡 Vérifiez que le dossier server\routes existe
+    pause
+    exit /b 1
+)
+
+echo   📁 Transfert du dossier socket...
+!SCP_CMD_PREFIX! -r server\socket %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/server/
+if %errorlevel% neq 0 (
+    echo ❌ Échec du transfert du dossier socket
+    echo 💡 Vérifiez que le dossier server\socket existe
+    pause
+    exit /b 1
+)
+
+REM Transfert du dossier utils s'il existe
+echo   📁 Transfert du dossier utils (optionnel)...
+!SCP_CMD_PREFIX! -r server\utils %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/server/ 2>nul || echo "     utils ignoré (pas trouvé)"
+
+echo   ✅ Étape 4 terminée avec succès
 
 echo.
 echo 📁 Étape 5: Transfert des fichiers de configuration...
-!SCP_CMD_PREFIX! ..\ecosystem.config.js %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/
-!SCP_CMD_PREFIX! ..\package.json %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/
+!SCP_CMD_PREFIX! ecosystem.config.js %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/
+!SCP_CMD_PREFIX! package.json %DEPLOY_USER%@%DEPLOY_HOST%:%DEPLOY_PATH%/
 
 echo.
 echo 🔧 Étape 6: Installation et configuration sur le serveur...
@@ -134,19 +216,15 @@ echo 📚 Installation des dépendances serveur...
 !SSH_CMD_PREFIX! %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && npm install --production --no-audit --no-fund"
 
 echo 📝 Configuration du fichier .env...
-!SSH_CMD_PREFIX! %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && if [ ! -f .env ]; then cat > .env << 'EOF'
-SPOTIFY_CLIENT_ID=your_client_id_here
-SPOTIFY_CLIENT_SECRET=your_client_secret_here
-SPOTIFY_REDIRECT_URI=https://%DEPLOY_HOST%/auth/callback
-PORT=3001
-NODE_ENV=production
-SESSION_SECRET=spotify_connect_secret_$(date +%%s)
-CLIENT_URL=https://%DEPLOY_HOST%
-EOF
+!SSH_CMD_PREFIX! %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && if [ ! -f .env ]; then 
+echo 'SPOTIFY_CLIENT_ID=your_client_id_here' > .env
+echo 'SPOTIFY_CLIENT_SECRET=your_client_secret_here' >> .env
+echo 'SPOTIFY_REDIRECT_URI=https://%DEPLOY_HOST%/auth/callback' >> .env
+echo 'PORT=3001' >> .env
+echo 'NODE_ENV=production' >> .env
+echo 'SESSION_SECRET=spotify_connect_secret_$(date +%%s)' >> .env
+echo 'CLIENT_URL=https://%DEPLOY_HOST%' >> .env
 fi"
-
-echo 📦 Installation de PM2...
-!SSH_CMD_PREFIX! %DEPLOY_USER%@%DEPLOY_HOST% "command -v pm2 >/dev/null || npm install -g pm2"
 
 echo ⏹️ Arrêt de l'ancienne version...
 !SSH_CMD_PREFIX! %DEPLOY_USER%@%DEPLOY_HOST% "pm2 stop spotify-connect 2>/dev/null || true && pm2 delete spotify-connect 2>/dev/null || true"
@@ -180,4 +258,3 @@ if %errorlevel% equ 0 (
 )
 
 echo.
-pause

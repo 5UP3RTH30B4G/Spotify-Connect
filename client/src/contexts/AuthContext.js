@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://scpearth.fr:5000';
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL;
 
   // Configuration axios avec credentials
   axios.defaults.withCredentials = true;

@@ -95,11 +95,27 @@ export const SocketProvider = ({ children, socket }) => {
     socket.on('queue_updated', (data) => {
       console.log('🔄 Queue mise à jour:', data);
       setPlaybackState(prev => ({ ...prev, queue: data.queue }));
+      
+      // Si c'est une suppression automatique, émettre un message spécial
+      if (data.autoRemoved && data.removedTrack) {
+        addSystemMessage(`📋 "${data.removedTrack.name}" supprimée automatiquement de la queue`, 'info');
+      }
     });
 
     socket.on('queue_message', (data) => {
       console.log('📋 Message queue:', data);
       addSystemMessage(`${data.user} ${data.message}`, 'info');
+    });
+
+    // Événement pour jouer automatiquement une chanson de la queue
+    socket.on('play_track_from_queue', async (data) => {
+      console.log('🎵 Demande de lecture automatique:', data.track.name);
+      addSystemMessage(`🎵 Lecture automatique: "${data.track.name}"`, 'success');
+      
+      // Émettre un événement pour que PlayerControls gère la lecture
+      window.dispatchEvent(new CustomEvent('autoPlayTrackFromQueue', {
+        detail: { track: data.track, requestedBy: data.requestedBy }
+      }));
     });
 
     // Événements de chat
@@ -152,6 +168,7 @@ export const SocketProvider = ({ children, socket }) => {
       socket.off('playback_control_received');
       socket.off('queue_updated');
       socket.off('queue_message');
+      socket.off('play_track_from_queue');
       socket.off('chat_message_received');
       socket.off('search_results_shared');
       socket.off('force_disconnect');
@@ -269,6 +286,13 @@ export const SocketProvider = ({ children, socket }) => {
     }
   };
 
+  const emitPlayNextFromQueue = () => {
+    if (socket && authenticated) {
+      console.log('🎵 Demande de lecture automatique de la prochaine chanson');
+      socket.emit('play_next_from_queue');
+    }
+  };
+
   const value = {
     socket,
     connectedUsers,
@@ -282,6 +306,7 @@ export const SocketProvider = ({ children, socket }) => {
     emitChatMessage,
     emitSearchShared,
     requestSync,
+    emitPlayNextFromQueue,
     addSystemMessage
   };
 

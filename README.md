@@ -52,8 +52,8 @@ cd spotify-connect
 4. Remplissez les informations :
    - **App name** : `Spotify Connect` (ou le nom de votre choix)
    - **App description** : `Application collaborative Spotify`
-   - **Website** : `http://localhost:3000`
-   - **Redirect URI** : `http://localhost:5000/auth/callback`
+   - **Website** : `http://127.0.0.1:3000`
+   - **Redirect URI** : `http://127.0.0.1:5000/auth/callback`
 5. Acceptez les conditions et créez l'app
 6. Notez votre **Client ID** et **Client Secret** (cliquez sur "Show client secret")
 
@@ -76,15 +76,15 @@ Ajoutez le contenu suivant dans `server/.env` :
 ```env
 NODE_ENV=development
 PORT=5000
-CLIENT_URL=http://localhost:3000
+CLIENT_URL=http://127.0.0.1:3000
 
 # Configuration Spotify (remplacez par vos vraies valeurs)
 SPOTIFY_CLIENT_ID=votre_client_id_spotify
 SPOTIFY_CLIENT_SECRET=votre_client_secret_spotify
-SPOTIFY_REDIRECT_URI=http://localhost:5000/auth/callback
+SPOTIFY_REDIRECT_URI=http://127.0.0.1:5000/auth/callback
 
 # URL de base pour l'API
-API_BASE_URL=http://localhost:5000
+API_BASE_URL=http://127.0.0.1:5000
 ```
 
 ### 4. Configuration du client
@@ -98,8 +98,8 @@ npm install
 #### Configuration optionnelle
 Créez un fichier `.env` dans le dossier `client` (optionnel) :
 ```env
-REACT_APP_API_URL=http://localhost:5000
-REACT_APP_SERVER_URL=http://localhost:5000
+REACT_APP_API_URL=http://127.0.0.1:5000
+REACT_APP_SERVER_URL=http://127.0.0.1:5000
 ```
 
 ### 5. Installation rapide (alternative)
@@ -122,8 +122,8 @@ cd client && npm install && cd ..
 npm run dev
 ```
 Cette commande démarre automatiquement :
-- Le serveur sur http://localhost:5000
-- Le client React sur http://localhost:3000
+- Le serveur sur http://127.0.0.1:5000
+- Le client React sur http://127.0.0.1:3000
 
 #### Option 2 : Démarrage séparé
 **Terminal 1 - Serveur :**
@@ -156,14 +156,14 @@ Le serveur servira automatiquement les fichiers statiques du client buildé.
 
 ### Vérification du bon fonctionnement
 
-1. ✅ **Serveur** : http://localhost:5000 doit afficher "Spotify Connect Server is running"
-2. ✅ **Client** : http://localhost:3000 doit afficher la page de connexion Spotify
+1. ✅ **Serveur** : http://127.0.0.1:5000 doit afficher "Spotify Connect Server is running"
+2. ✅ **Client** : http://127.0.0.1:3000 doit afficher la page de connexion Spotify
 3. ✅ **Socket.IO** : Les connexions temps réel doivent fonctionner (visible dans les logs)
 
 ## 🎮 Utilisation
 
 1. **Ouvrez Spotify** sur un appareil (ordinateur, téléphone, etc.)
-2. **Accédez à l'application** : http://localhost:3000
+2. **Accédez à l'application** : http://127.0.0.1:3000
 3. **Connectez-vous** avec votre compte Spotify
 4. **Invitez des amis** en partageant l'URL
 5. **Contrôlez la musique** ensemble !
