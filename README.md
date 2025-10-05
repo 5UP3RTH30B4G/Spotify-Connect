@@ -2,7 +2,22 @@
 
 Une application web collaborative qui permet à plusieurs utilisateurs de contrôler Spotify ensemble en temps réel.
 
+# 🎵 Spotify Connect
+
+Une application web collaborative qui permet à plusieurs utilisateurs de contrôler Spotify ensemble en temps réel.
+
 ## ✨ Fonctionnalités
+
+## Deployment & Troubleshooting (summary)
+
+If you deploy behind an HTTPS reverse proxy (nginx) and use Socket.IO, make sure:
+
+- nginx proxies `/socket.io/` to your backend with websocket upgrade headers.
+- Client should connect to the same origin in production (e.g. `window.location.origin`).
+- Backend should read Let's Encrypt certs directly (e.g. `/etc/letsencrypt/live/your-domain/fullchain.pem`).
+- Use cookies with `withCredentials` and set `proxy_set_header X-Forwarded-Proto $scheme` in nginx when proxying HTTPS.
+
+For a complete, step-by-step guide see `DEPLOYMENT_GUIDE.md` in the repo root.
 
 - 🔐 **Authentification Spotify OAuth** - Connexion sécurisée avec votre compte Spotify
 - 👥 **Multi-utilisateurs** - Plusieurs personnes peuvent se connecter simultanément

@@ -13,25 +13,16 @@ import {
   Chip
 } from '@mui/material';
 import { Search, Add } from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
-import { useSocket } from '../contexts/SocketContext';
 
-const SearchComponent = ({ onTrackQueued }) => {
+const SearchComponent = ({ socket, onTrackQueued }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const { API_BASE_URL } = useAuth();
-  const { socket, playbackState } = useSocket();
 
   const emitTrackQueued = useCallback((track) => {
-    console.log('🔌 Socket disponible:', !!socket);
-    console.log('🔌 Socket connecté:', socket?.connected);
     if (socket) {
-      console.log('📤 Émission événement track_queued vers serveur:', track);
-      socket.emit('track_queued', track); // Changé de 'addToQueue' à 'track_queued'
-      console.log('✅ Événement track_queued émis avec succès');
-    } else {
-      console.error('❌ Socket non disponible pour émettre track_queued');
+      socket.emit('addToQueue', track);
+      console.log('🎵 Track émis au serveur:', track);
     }
   }, [socket]);
 
@@ -65,16 +56,10 @@ const SearchComponent = ({ onTrackQueued }) => {
 
     setLoading(true);
     try {
-      console.log('🔍 Recherche pour:', searchQuery, 'URL:', `${API_BASE_URL}/api/spotify/search`);
-      const response = await fetch(`${API_BASE_URL}/api/spotify/search?q=${encodeURIComponent(searchQuery)}`, {
-        credentials: 'include' // Important pour inclure les cookies de session
-      });
-      console.log('📡 Réponse recherche:', response.status, response.statusText);
+      const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
       if (response.ok) {
         const data = await response.json();
         const tracks = data.tracks?.items || [];
-        console.log('🎵 Résultats trouvés:', tracks.length, 'tracks');
-        // Afficher tous les résultats sans limitation
         setResults(tracks);
 
         // Émettre les résultats au serveur pour synchronisation
@@ -82,29 +67,19 @@ const SearchComponent = ({ onTrackQueued }) => {
           query: searchQuery,
           results: tracks.slice(0, 5) // Partager seulement les 5 premiers
         });
-      } else {
-        console.error('❌ Erreur recherche - Status:', response.status);
-        const errorText = await response.text();
-        console.error('❌ Détails erreur:', errorText);
-        setResults([]);
       }
     } catch (error) {
-      console.error('❌ Erreur lors de la recherche:', error);
+      console.error('Erreur lors de la recherche:', error);
       setResults([]);
     } finally {
       setLoading(false);
     }
-  }, [API_BASE_URL, socket]);
+  }, [socket]);
 
-  const handleSearch = useCallback((searchQuery) => {
-    const debounced = debounce(() => searchTracks(searchQuery), 300);
-    debounced();
-  }, [searchTracks]);
+  const handleSearch = useCallback(debounce(searchTracks, 300), [searchTracks]);
 
   const handleAddToQueue = async (track) => {
     console.log('🎵 Tentative d\'ajout à la file d\'attente:', track.name);
-    console.log('📊 État actuel playbackState:', playbackState);
-    console.log('📋 File actuelle:', playbackState?.queue);
     
     try {
       // Émettre directement à la queue serveur (pas à Spotify)
@@ -120,24 +95,7 @@ const SearchComponent = ({ onTrackQueued }) => {
       };
       
       console.log('📤 Émission vers le serveur:', trackData);
-      
-      // Vérifier si auto-play nécessaire AVANT d'ajouter à la file
-      const { queue } = playbackState || {};
-      const shouldAutoPlay = !queue || queue.length === 0;
-      
-      if (shouldAutoPlay) {
-        console.log('🎵 File vide détectée, lecture automatique programmée');
-      } else {
-        console.log('📋 File non vide, ajout normal à la queue:', queue.length, 'éléments');
-      }
-
       emitTrackQueued(trackData);
-
-      // Auto-play si la file était vide
-      if (shouldAutoPlay) {
-        console.log('🚀 Déclenchement auto-play pour:', trackData.name);
-        socket?.emit('auto_play_track', trackData);
-      }
 
       console.log('✅ Chanson ajoutée à la file d\'attente serveur:', track.name);
     } catch (error) {
@@ -210,25 +168,23 @@ const SearchComponent = ({ onTrackQueued }) => {
         }}
       />
 
-      {/* Liste des résultats avec scroll optimisé et hauteur flexible */}
+      {/* Liste des résultats avec scroll optimisé */}
       <Box sx={{ 
         flex: 1, 
         overflow: 'auto',
-        minHeight: '200px', // Hauteur minimale 
-        maxHeight: 'calc(100vh - 200px)', // Hauteur maximale dynamique
-        // Style de scrollbar personnalisé et plus visible
+        // Style de scrollbar personnalisé
         '&::-webkit-scrollbar': {
-          width: { xs: 8, sm: 10 }, // Scrollbar plus visible
+          width: { xs: 4, sm: 6 },
         },
         '&::-webkit-scrollbar-track': {
           backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          borderRadius: 5,
+          borderRadius: 3,
         },
         '&::-webkit-scrollbar-thumb': {
-          backgroundColor: 'rgba(29, 185, 84, 0.6)', // Couleur Spotify verte
-          borderRadius: 5,
+          backgroundColor: 'rgba(255, 255, 255, 0.3)',
+          borderRadius: 3,
           '&:hover': {
-            backgroundColor: 'rgba(29, 185, 84, 0.8)',
+            backgroundColor: 'rgba(255, 255, 255, 0.5)',
           },
         },
       }}>
@@ -321,25 +277,38 @@ const SearchComponent = ({ onTrackQueued }) => {
               
               <ListItemText
                 primary={
-                  <Typography 
-                    variant="body1" 
-                    sx={{
-                      color: 'white',
-                      fontWeight: 'medium',
-                      fontSize: { xs: '0.9rem', sm: '1rem' }
-                    }}
-                  >
-                    {track.name}
-                  </Typography>
+                  <Box className="scrolling-text-container" sx={{ 
+                    maxWidth: { xs: 'calc(100% - 150px)', sm: 'calc(100% - 170px)' }
+                  }}>
+                    <Typography 
+                      variant="body1" 
+                      className={`scrolling-text ${track.name.length > 10 ? 'scrolling-text-active' : 'scrolling-text-inactive'}`}
+                      sx={{ 
+                        color: 'white',
+                        fontWeight: 'medium',
+                        fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                        animationName: track.name.length > 10 ? 'scrollTextSearchComplete' : 'none'
+                      }}
+                    >
+                      {track.name}
+                    </Typography>
+                  </Box>
                 }
                 secondary={
-                  <Box>
+                  <Box sx={{ 
+                    maxWidth: { xs: 'calc(100% - 150px)', sm: 'calc(100% - 170px)' },
+                    overflow: 'hidden'
+                  }}>
                     <Typography 
                       variant="body2" 
                       color="text.secondary" 
-                      sx={{
+                      noWrap
+                      sx={{ 
                         display: 'block',
-                        fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        maxWidth: '100%',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
                       }}
                     >
                       {track.artists?.map(artist => artist.name).join(', ')}
@@ -351,18 +320,22 @@ const SearchComponent = ({ onTrackQueued }) => {
                       mt: 0.5,
                       flexWrap: 'wrap'
                     }}>
-                      <Typography 
-                        variant="caption" 
-                        color="text.secondary"
-                        noWrap
-                        sx={{ 
-                          fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                          flex: 1,
-                          minWidth: 0
-                        }}
-                      >
-                        {track.album?.name}
-                      </Typography>
+                      <Box className="scrolling-text-container" sx={{ 
+                        flex: 1,
+                        maxWidth: 'calc(100% - 60px)'
+                      }}>
+                        <Typography 
+                          variant="caption" 
+                          color="text.secondary"
+                          className={`scrolling-text ${track.album?.name?.length > 8 ? 'scrolling-text-active' : 'scrolling-text-inactive'}`}
+                          sx={{ 
+                            fontSize: { xs: '0.65rem', sm: '0.7rem' },
+                            animationName: track.album?.name?.length > 8 ? 'scrollTextAlbumSearchComplete' : 'none'
+                          }}
+                        >
+                          {track.album?.name}
+                        </Typography>
+                      </Box>
                       <Chip
                         label={formatDuration(track.duration_ms)}
                         size="small"

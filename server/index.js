@@ -7,25 +7,51 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
+// Vérification et configuration des variables d'environnement
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const PORT = process.env.PORT || 5000;
+const CLIENT_URL = process.env.CLIENT_URL || process.env.CLIENT_ORIGIN || 'http://127.0.0.1:3000';
+const API_BASE_URL = process.env.API_BASE_URL || `http://127.0.0.1:${PORT}`;
+
+// Vérifications des variables Spotify critiques
+if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
+  console.error('❌ Variables Spotify manquantes dans .env:');
+  console.error('   - SPOTIFY_CLIENT_ID');
+  console.error('   - SPOTIFY_CLIENT_SECRET');
+  console.error('   Veuillez les configurer avant de démarrer le serveur.');
+  process.exit(1);
+}
+
+console.log('🔧 Configuration du serveur:');
+console.log(`   NODE_ENV: ${NODE_ENV}`);
+console.log(`   PORT: ${PORT}`);
+console.log(`   CLIENT_URL: ${CLIENT_URL}`);
+console.log(`   API_BASE_URL: ${API_BASE_URL}`);
+console.log(`   SPOTIFY_REDIRECT_URI: ${process.env.SPOTIFY_REDIRECT_URI}`);
+
 const authRoutes = require('./routes/auth');
 const spotifyRoutes = require('./routes/spotify');
 const socketHandler = require('./socket/socketHandler');
 
 const app = express();
 
-// Configuration SSL (only for production)
+// Configuration SSL simplifiée comme dans l'ancienne version
 let server;
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = NODE_ENV === 'production';
 
 if (isProduction) {
-  // Use HTTPS in production
-  const sslKeyPath = process.env.SSL_KEY_PATH;
-  const sslCertPath = process.env.SSL_CERT_PATH;
-  const sslOptions = {
-    key: fs.readFileSync(sslKeyPath),
-    cert: fs.readFileSync(sslCertPath)
-  };
-  server = https.createServer(sslOptions, app);
+  // Configuration directe des certificats SSL
+  try {
+    const sslOptions = {
+      key: fs.readFileSync('/etc/letsencrypt/live/scpearth.fr/privkey.pem'),
+      cert: fs.readFileSync('/etc/letsencrypt/live/scpearth.fr/fullchain.pem')
+    };
+    server = https.createServer(sslOptions, app);
+    console.log('🔒 HTTPS server configured with SSL certificates');
+  } catch (error) {
+    console.error('❌ Erreur lecture certificats SSL:', error.message);
+    process.exit(1);
+  }
 } else {
   // Use HTTP in development
   server = http.createServer(app);
@@ -33,14 +59,14 @@ if (isProduction) {
 
 const io = socketIo(server, {
   cors: {
-    origin: process.env.CLIENT_URL || process.env.CLIENT_ORIGIN || "http://127.0.0.1:3000",
+    origin: CLIENT_URL,
     methods: ["GET", "POST"]
   }
 });
 
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || process.env.CLIENT_ORIGIN || "http://127.0.0.1:3000",
+  origin: CLIENT_URL,
   credentials: true
 }));
 app.use(express.json());
@@ -52,6 +78,7 @@ app.use('/api/spotify', spotifyRoutes);
 
 // Socket.IO
 socketHandler(io);
+socketHandler.setIO(io);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -59,9 +86,8 @@ app.get('/health', (req, res) => {
   res.json({ status: `Server is running with ${protocol}!` });
 });
 
-const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   const protocol = isProduction ? 'HTTPS' : 'HTTP';
   console.log(`🚀 Serveur ${protocol} démarré sur le port ${PORT}`);
-  console.log(`${isProduction ? '🔒' : '🔓'} Spotify Connect Remastered Backend ${isProduction ? 'avec SSL' : 'en mode développement'}`);
+  console.log(`${isProduction ? '🔒' : '🔓'} Spotify Connect Backend ${isProduction ? 'avec SSL' : 'en mode développement'}`);
 });

@@ -16,10 +16,15 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
 
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL;
+  const API_BASE_URL = process.env.NODE_ENV === 'production' 
+    ? window.location.origin 
+    : (process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000');
 
   // Configuration axios avec credentials
   axios.defaults.withCredentials = true;
+  axios.defaults.baseURL = API_BASE_URL;
+
+  console.log('🔧 AuthContext API_BASE_URL:', API_BASE_URL, 'NODE_ENV:', process.env.NODE_ENV);
 
   useEffect(() => {
     console.log('🔄 Initialisation AuthProvider');

@@ -4,9 +4,23 @@ const axios = require('axios');
 const sessionManager = require('../utils/sessionManager');
 const router = express.Router();
 
+// Configuration des variables d'environnement avec vérifications
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
-const REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
+const REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI || `http://127.0.0.1:${process.env.PORT || 5000}/auth/callback`;
+const CLIENT_URL = process.env.CLIENT_URL || process.env.CLIENT_ORIGIN || 'http://127.0.0.1:3000';
+
+// Vérifications des variables critiques
+if (!CLIENT_ID || !CLIENT_SECRET) {
+  console.error('❌ Variables Spotify manquantes dans les routes auth:');
+  if (!CLIENT_ID) console.error('   - SPOTIFY_CLIENT_ID non défini');
+  if (!CLIENT_SECRET) console.error('   - SPOTIFY_CLIENT_SECRET non défini');
+}
+
+console.log('🔑 Configuration Spotify Auth:');
+console.log(`   CLIENT_ID: ${CLIENT_ID ? CLIENT_ID.substring(0, 8) + '...' : 'NON DÉFINI'}`);
+console.log(`   REDIRECT_URI: ${REDIRECT_URI}`);
+console.log(`   CLIENT_URL: ${CLIENT_URL}`);
 
 // Générer une chaîne aléatoire pour l'état
 const generateRandomString = (length) => {
@@ -107,13 +121,13 @@ router.get('/callback', async (req, res) => {
     console.log('💾 Session stockée pour:', userResponse.data.display_name, 'ID:', sessionId);
 
     // Rediriger vers le frontend avec succès
-    const redirectUrl = `${process.env.CLIENT_URL}/?auth=success&user=${encodeURIComponent(userResponse.data.display_name)}`;
+    const redirectUrl = `${CLIENT_URL}/?auth=success&user=${encodeURIComponent(userResponse.data.display_name)}`;
     console.log('🔄 Redirection vers:', redirectUrl);
     res.redirect(redirectUrl);
 
   } catch (error) {
     console.error('❌ Erreur lors de l\'authentification:', error.response?.data || error.message);
-    res.redirect(`${process.env.CLIENT_URL}/?auth=error&message=${encodeURIComponent('Authentication failed')}`);
+    res.redirect(`${CLIENT_URL}/?auth=error&message=${encodeURIComponent('Authentication failed')}`);
   }
 });
 

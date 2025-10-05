@@ -34,8 +34,11 @@ function App() {
 
   useEffect(() => {
     // Initialiser la connexion Socket.IO
-    // Prefer explicit server socket URL, fallback to API base URL or existing hardcoded
-    const serverUrl = process.env.REACT_APP_SERVER_URL || process.env.REACT_APP_API_BASE_URL;
+    // Use same origin for Socket.IO in production (served by nginx)
+    const serverUrl = process.env.NODE_ENV === 'production' 
+      ? window.location.origin 
+      : (process.env.REACT_APP_SERVER_URL || process.env.REACT_APP_API_BASE_URL);
+    console.log('🔌 Connecting to Socket.IO server:', serverUrl);
     const newSocket = io(serverUrl);
     setSocket(newSocket);
 

@@ -105,11 +105,19 @@ html, body, #root {
 .connection-status.connected {
   background: rgba(29, 185, 84, 0.2);
   color: #1DB954;
+  border: 1px solid rgba(29, 185, 84, 0.3);
 }
 
 .connection-status.disconnected {
   background: rgba(255, 82, 82, 0.2);
   color: #ff5252;
+  border: 1px solid rgba(255, 82, 82, 0.3);
+  animation: pulse-disconnected 2s infinite;
+}
+
+@keyframes pulse-disconnected {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 .status-dot {

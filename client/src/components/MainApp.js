@@ -73,7 +73,7 @@ const MainApp = () => {
         <div className="main-content">
           {/* Player Section */}
           <section className="player-section">
-            <PlayerControls />
+            <PlayerControls/>
           </section>
 
           {/* Content Grid */}

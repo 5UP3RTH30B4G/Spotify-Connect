@@ -141,6 +141,49 @@ router.post('/queue', requireAuth, async (req, res) => {
   }
 });
 
+// Jouer le prochain titre depuis la queue locale
+router.post('/queue/next', requireAuth, async (req, res) => {
+  try {
+    console.log('🎵 Demande de lecture du prochain titre de la queue locale');
+    
+    // Récupérer la queue locale depuis le socket handler
+    const socketHandler = require('../socket/socketHandler');
+    const playbackState = socketHandler.getPlaybackState();
+    
+    if (!playbackState || !playbackState.queue || playbackState.queue.length === 0) {
+      console.log('❌ Queue locale vide');
+      return res.status(400).json({ error: 'Queue vide' });
+    }
+    
+    const nextTrack = playbackState.queue[0];
+    console.log('🎵 Prochaine chanson à jouer:', nextTrack.name, 'par', nextTrack.artists?.[0]?.name || 'Artiste inconnu');
+    
+    // Jouer le track sur Spotify
+    await axios.put('https://api.spotify.com/v1/me/player/play', 
+      { uris: [nextTrack.uri] },
+      {
+        headers: { 'Authorization': 'Bearer ' + req.access_token }
+      }
+    );
+    
+    // Supprimer le track de la queue locale
+    const removedTrack = socketHandler.removeFirstFromQueue();
+    
+    console.log('✅ Lecture réussie depuis la queue locale');
+    res.json({ 
+      success: true, 
+      playedTrack: removedTrack,
+      remainingQueueLength: playbackState.queue.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur lors de la lecture depuis la queue:', error.response?.data || error.message);
+    res.status(500).json({ 
+      error: error.response?.data?.error?.message || 'Erreur lors de la lecture depuis la queue' 
+    });
+  }
+});
+
 // Obtenir les appareils disponibles
 router.get('/devices', requireAuth, async (req, res) => {
   try {

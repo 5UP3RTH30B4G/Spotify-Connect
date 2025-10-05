@@ -8,6 +8,9 @@ let currentPlaybackState = {
   controller: null // Utilisateur qui contrôle actuellement
 };
 
+// Instance IO pour les méthodes utilitaires
+let ioInstance = null;
+
 // Système de limitation des logs pour éviter le spam
 let lastLogTimes = new Map(); // Stocke les derniers logs par clé unique
 
@@ -23,6 +26,8 @@ const shouldLog = (logKey, intervalMs = 10000) => {
 };
 
 const socketHandler = (io) => {
+  ioInstance = io; // Stocker l'instance pour les méthodes utilitaires
+  
   io.on('connection', (socket) => {
     console.log(`👤 Utilisateur connecté: ${socket.id}`);
 
@@ -48,65 +53,49 @@ const socketHandler = (io) => {
       }
       
       // D'abord enregistrer le nouvel utilisateur
-      connectedUsers.set(socket.id, {
-        id: socket.id,
-        name: userData.name,
-        spotifyId: userData.spotifyId,
-        avatar: userData.avatar,
-        connectedAt: new Date()
-      });
-
+      connectedUsers.set(socket.id, userData);
       console.log(`✅ ${userData.name} connecté depuis ${socket.id}`);
       
-      // Ensuite déconnecter les anciennes sessions du même utilisateur (mais pas le socket actuel)
-      if (existingUserSockets.length > 0) {
-        existingUserSockets.forEach(oldSocketId => {
-          const oldSocket = io.sockets.sockets.get(oldSocketId);
-          if (oldSocket && oldSocket.id !== socket.id) {
-            console.log(`🔄 Déconnexion de l'ancienne session de ${userData.name}: ${oldSocketId}`);
-            oldSocket.emit('force_disconnect', {
-              reason: 'new_session',
-              message: 'Une nouvelle session a été ouverte depuis un autre appareil'
-            });
-            // Délai avant déconnexion pour permettre l'affichage du message
-            setTimeout(() => {
-              oldSocket.disconnect(true);
-            }, 1000);
-          }
-          connectedUsers.delete(oldSocketId);
-        });
-      }
+      // Puis supprimer les anciens sockets pour le même utilisateur
+      existingUserSockets.forEach(oldSocketId => {
+        connectedUsers.delete(oldSocketId);
+        console.log(`🔄 Suppression de l'ancienne connexion ${oldSocketId} pour ${userData.name}`);
+      });
 
-      // Informer tous les clients de la nouvelle connexion
-      io.emit('user_list_updated', Array.from(connectedUsers.values()));
-      
-      // Envoyer l'état actuel de la lecture au nouvel utilisateur
-      socket.emit('playback_state_updated', currentPlaybackState);
-      
-      // Message de bienvenue uniquement s'il n'y avait pas d'anciennes sessions
-      if (existingUserSockets.length === 0) {
-        socket.broadcast.emit('user_joined', {
-          user: userData.name,
-          message: `${userData.name} a rejoint la session !`
-        });
-      }
+      // Émettre la liste mise à jour des utilisateurs connectés
+      const usersList = Array.from(connectedUsers.values());
+      io.emit('user_list_updated', usersList);
+
+      // Événement d'information de connexion pour les autres utilisateurs
+      socket.broadcast.emit('user_joined', {
+        user: userData.name,
+        timestamp: new Date()
+      });
+
+      // Envoyer l'état actuel au nouvel utilisateur
+      socket.emit('full_sync', {
+        playbackState: currentPlaybackState,
+        connectedUsers: usersList
+      });
     });
 
-    // Événement de mise à jour de l'état de lecture
-    socket.on('playback_state_changed', (newState) => {
+    // Événement de déconnexion
+    socket.on('disconnect', () => {
       const user = connectedUsers.get(socket.id);
-      if (!user) return;
+      if (user) {
+        console.log(`👋 ${user.name} s'est déconnecté`);
+        connectedUsers.delete(socket.id);
 
-      // Mettre à jour l'état global
-      currentPlaybackState = {
-        ...currentPlaybackState,
-        ...newState,
-        lastUpdatedBy: user.name,
-        lastUpdatedAt: new Date()
-      };
+        // Émettre la liste mise à jour
+        const usersList = Array.from(connectedUsers.values());
+        io.emit('user_list_updated', usersList);
 
-      // Diffuser la mise à jour à tous les clients
-      socket.broadcast.emit('playback_state_updated', currentPlaybackState);
+        // Événement d'information de déconnexion
+        socket.broadcast.emit('user_left', {
+          user: user.name,
+          timestamp: new Date()
+        });
+      }
     });
 
     // Événement pour jouer automatiquement la prochaine chanson de la queue
@@ -139,26 +128,90 @@ const socketHandler = (io) => {
         const removedTrack = currentPlaybackState.queue.shift();
         console.log(`📋 Suppression automatique de la queue: ${removedTrack?.name}`);
         
-        // Informer tous les clients de la mise à jour de la queue
+        // Émettre la mise à jour de la queue vers tous les clients
         io.emit('queue_updated', {
           queue: currentPlaybackState.queue,
-          removedTrack: removedTrack,
-          removedBy: 'System (next)',
-          autoRemoved: true
+          autoRemoved: true,
+          removedTrack: removedTrack
         });
       }
 
-      // Diffuser l'action à tous les clients
-      io.emit('playback_control_received', {
-        action: action.type,
+      // Informer tous les autres clients de l'action de contrôle
+      socket.broadcast.emit('playback_control_received', {
         user: user.name,
-        timestamp: new Date(),
-        queueLength: currentPlaybackState.queue.length
+        action: action.type,
+        timestamp: new Date()
       });
 
-      // Mettre à jour le contrôleur actuel
+      // Mettre à jour le contrôleur pour certaines actions
       if (['play', 'pause', 'next', 'previous'].includes(action.type)) {
         currentPlaybackState.controller = user.name;
+      }
+    });
+
+    // Événement d'auto-play quand file vide
+    socket.on('auto_play_track', async (trackData) => {
+      console.log(`🎵 Auto-play demandé de ${socket.id}:`, trackData);
+      console.log(`📊 État serveur actuel - Queue: ${currentPlaybackState.queue.length}, Current: ${currentPlaybackState.currentTrack?.name || 'none'}`);
+      const user = connectedUsers.get(socket.id);
+      
+      if (!user) {
+        console.error(`❌ Utilisateur non trouvé pour auto-play`);
+        return;
+      }
+
+      // Auto-play même si il y a 1 élément dans la queue (celui qu'on vient d'ajouter)
+      // mais pas de musique en cours de lecture
+      if (!currentPlaybackState.currentTrack || !currentPlaybackState.isPlaying) {
+        console.log(`🚀 Lecture automatique de "${trackData.name}"`);
+        
+        // Mettre à jour l'état de lecture
+        currentPlaybackState.currentTrack = trackData;
+        currentPlaybackState.isPlaying = true;
+        currentPlaybackState.position = 0;
+        currentPlaybackState.controller = user.name;
+
+        // Émettre l'état mis à jour
+        io.emit('playback_state_updated', currentPlaybackState);
+
+        // Jouer via Spotify API en utilisant la route locale
+        try {
+          const response = await fetch(`http://localhost:5000/api/spotify/play-track`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Cookie': `session_id=${user.sessionId}`
+            },
+            body: JSON.stringify({
+              uri: trackData.uri
+            })
+          });
+
+          if (response.ok) {
+            console.log(`✅ Track joué avec succès: ${trackData.uri}`);
+            
+            // Supprimer le track de la queue après lecture réussie
+            const trackIndex = currentPlaybackState.queue.findIndex(q => q.uri === trackData.uri);
+            if (trackIndex !== -1) {
+              const removedTrack = currentPlaybackState.queue.splice(trackIndex, 1)[0];
+              console.log(`📋 Suppression automatique de la queue: ${removedTrack.name}`);
+              
+              // Informer tous les clients de la mise à jour de la queue
+              io.emit('queue_updated', {
+                queue: currentPlaybackState.queue,
+                autoRemoved: true,
+                removedTrack: removedTrack
+              });
+            }
+          } else {
+            const errorText = await response.text();
+            console.error(`❌ Erreur lors de la lecture:`, errorText);
+          }
+        } catch (error) {
+          console.error(`❌ Erreur de connexion Spotify:`, error);
+        }
+      } else {
+        console.log(`⚠️ Auto-play ignoré - musique déjà en cours: "${currentPlaybackState.currentTrack?.name}"`);
       }
     });
 
@@ -185,7 +238,7 @@ const socketHandler = (io) => {
       // Ajouter à la file d'attente globale
       currentPlaybackState.queue.push(queueItem);
 
-      // Informer tous les clients
+      // Informer tous les clients de la mise à jour de la queue
       io.emit('queue_updated', {
         queue: currentPlaybackState.queue,
         addedTrack: queueItem,
@@ -206,96 +259,87 @@ const socketHandler = (io) => {
       if (!user) return;
 
       const trackIndex = currentPlaybackState.queue.findIndex(track => track.id === trackId);
-      if (trackIndex === -1) return;
+      if (trackIndex !== -1) {
+        const removedTrack = currentPlaybackState.queue.splice(trackIndex, 1)[0];
+        console.log(`🗑️ ${user.name} a supprimé "${removedTrack.name}" de la file d'attente`);
 
-      const removedTrack = currentPlaybackState.queue[trackIndex];
-      currentPlaybackState.queue.splice(trackIndex, 1);
+        // Informer tous les clients de la mise à jour de la queue
+        io.emit('queue_updated', {
+          queue: currentPlaybackState.queue,
+          removedTrack: removedTrack,
+          removedBy: user.name
+        });
 
-      console.log(`➖ ${user.name} a supprimé "${removedTrack.name}" de la file d'attente`);
-
-      // Informer tous les clients
-      io.emit('queue_updated', {
-        queue: currentPlaybackState.queue,
-        removedTrack: removedTrack,
-        removedBy: user.name
-      });
+        // Message dans le chat
+        io.emit('queue_message', {
+          user: user.name,
+          message: `a supprimé "${removedTrack.name}" de la file d'attente`,
+          timestamp: new Date()
+        });
+      }
     });
 
-    // Événement de recherche collaborative
-    socket.on('search_shared', (searchData) => {
+    // Événement de changement d'état de lecture
+    socket.on('playback_state_changed', (newState) => {
       const user = connectedUsers.get(socket.id);
       if (!user) return;
 
-      // Partager les résultats de recherche avec tous les utilisateurs
-      socket.broadcast.emit('search_results_shared', {
-        results: searchData.results,
-        query: searchData.query,
-        sharedBy: user.name
-      });
+      // Mettre à jour l'état global
+      if (newState.currentTrack) {
+        currentPlaybackState.currentTrack = newState.currentTrack;
+      }
+      if (newState.isPlaying !== undefined) {
+        currentPlaybackState.isPlaying = newState.isPlaying;
+      }
+      if (newState.position !== undefined) {
+        currentPlaybackState.position = newState.position;
+      }
+      if (newState.controller) {
+        currentPlaybackState.controller = newState.controller;
+      }
+
+      // Informer tous les autres clients
+      socket.broadcast.emit('playback_state_updated', currentPlaybackState);
     });
 
-    // Chat collaboratif
-    socket.on('chat_message', (messageData) => {
+    // Événement de message de chat
+    socket.on('chat_message', (data) => {
       const user = connectedUsers.get(socket.id);
       if (!user) return;
 
       const message = {
         id: Date.now(),
         user: user.name,
-        avatar: user.avatar,
-        message: messageData.message,
-        timestamp: new Date()
+        message: data.message,
+        timestamp: new Date(),
+        avatar: user.avatar
       };
 
-      console.log(`💬 ${user.name}: ${messageData.message}`);
-
-      // Diffuser le message à tous les clients
+      // Diffuser le message à tous les clients connectés
       io.emit('chat_message_received', message);
+    });
+
+    // Événement de partage de recherche
+    socket.on('search_shared', (searchData) => {
+      const user = connectedUsers.get(socket.id);
+      if (!user) return;
+
+      // Diffuser les résultats de recherche à tous les autres clients
+      socket.broadcast.emit('search_results_shared', {
+        sharedBy: user.name,
+        query: searchData.query,
+        results: searchData.results,
+        timestamp: new Date()
+      });
     });
 
     // Événement de demande de synchronisation
     socket.on('request_sync', () => {
-      const user = connectedUsers.get(socket.id);
-      if (!user) return;
-
-      // Envoyer l'état complet à l'utilisateur qui le demande
+      const usersList = Array.from(connectedUsers.values());
       socket.emit('full_sync', {
         playbackState: currentPlaybackState,
-        connectedUsers: Array.from(connectedUsers.values())
+        connectedUsers: usersList
       });
-    });
-
-    // Déconnexion
-    socket.on('disconnect', () => {
-      const user = connectedUsers.get(socket.id);
-      
-      if (user) {
-        console.log(`👋 ${user.name} s'est déconnecté`);
-        
-        // Supprimer l'utilisateur de la liste
-        connectedUsers.delete(socket.id);
-        
-        // Si c'était le contrôleur, le retirer
-        if (currentPlaybackState.controller === user.name) {
-          currentPlaybackState.controller = null;
-        }
-        
-        // Informer les autres utilisateurs
-        socket.broadcast.emit('user_left', {
-          user: user.name,
-          message: `${user.name} a quitté la session`
-        });
-        
-        // Mettre à jour la liste des utilisateurs
-        io.emit('user_list_updated', Array.from(connectedUsers.values()));
-      } else {
-        console.log(`👤 Utilisateur non identifié déconnecté: ${socket.id}`);
-      }
-    });
-
-    // Gestion d'erreurs
-    socket.on('error', (error) => {
-      console.error(`❌ Erreur socket ${socket.id}:`, error);
     });
   });
 
@@ -304,6 +348,36 @@ const socketHandler = (io) => {
     // Nettoyer les anciennes entrées de la file d'attente si nécessaire
     // currentPlaybackState.queue = currentPlaybackState.queue.slice(-50); // Garder seulement les 50 dernières
   }, 5 * 60 * 1000); // Toutes les 5 minutes
+};
+
+// Méthodes utilitaires pour exposer la queue locale
+socketHandler.setIO = (io) => {
+  ioInstance = io;
+};
+
+socketHandler.getCurrentQueue = () => {
+  return currentPlaybackState.queue;
+};
+
+socketHandler.removeFirstFromQueue = () => {
+  if (currentPlaybackState.queue.length > 0) {
+    const removedTrack = currentPlaybackState.queue.shift();
+    console.log(`📋 Track supprimé de la queue locale: ${removedTrack.name}`);
+    // Émettre la mise à jour de la queue après suppression
+    if (ioInstance) {
+      ioInstance.emit('queue_updated', {
+        queue: currentPlaybackState.queue,
+        autoRemoved: true,
+        removedTrack: removedTrack
+      });
+    }
+    return removedTrack;
+  }
+  return null;
+};
+
+socketHandler.getPlaybackState = () => {
+  return currentPlaybackState;
 };
 
 module.exports = socketHandler;
