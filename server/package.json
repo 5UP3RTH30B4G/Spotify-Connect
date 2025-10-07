@@ -1,6 +1,6 @@
 {
   "name": "spotify-connect-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Backend pour l'application Spotify Connect collaborative",
   "main": "index.js",
   "scripts": {
