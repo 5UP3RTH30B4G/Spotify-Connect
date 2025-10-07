@@ -223,3 +223,11 @@ temp/
 
 # Wiki pages
 wiki/
+
+# Nginx configuration files
+nginx-clean.conf
+nginx-client.conf
+
+# PM2 configuration files
+ecosystem.config.js
+ecosystem.config.js
