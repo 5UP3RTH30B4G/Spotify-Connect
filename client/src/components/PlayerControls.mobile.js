@@ -45,6 +45,7 @@ const PlayerControls = () => {
   const [error, setError] = useState(null);
   const [deviceMenuAnchor, setDeviceMenuAnchor] = useState(null);
   const [rateLimited, setRateLimited] = useState(false);
+  const isMobileDeviceSelected = playbackState?.device?.type && playbackState.device.type.toLowerCase().includes('phone');
 
   const fetchPlaybackState = useCallback(async () => {
     if (rateLimited) return;
@@ -344,9 +345,9 @@ const PlayerControls = () => {
                   }}>
                   {currentTrack.album?.name}
                 </Typography>
-                {playbackState.controller && (
+                {playbackState.fetcher && (
                   <Chip 
-                    label={`Contrôlé par ${playbackState.controller}`}
+                    label={`Géré par ${playbackState.fetcher?.name || playbackState.fetcher}`}
                     size="small"
                     color="primary"
                     sx={{ 
@@ -515,32 +516,86 @@ const PlayerControls = () => {
           )}
         </Box>
 
-        {/* Section: Volume et appareils - cachée sur mobile */}
+        {/* Section: Volume et appareils - cachée si l'appareil sélectionné est un téléphone */}
+        {!isMobileDeviceSelected && (
+          <Box sx={{ 
+            display: { xs: 'none', md: 'flex' },
+            alignItems: 'center',
+            minWidth: 150,
+            justifyContent: 'flex-end'
+          }}>
+            {/* Contrôle de volume */}
+            <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+              <VolumeUp sx={{ color: 'text.secondary', mr: 1 }} />
+              <Slider
+                value={volume}
+                onChange={(e, newValue) => setVolume(newValue)}
+                onChangeCommitted={handleVolumeChangeCommitted}
+                sx={{
+                  width: 80,
+                  color: '#1DB954',
+                  '& .MuiSlider-thumb': {
+                    width: 12,
+                    height: 12,
+                  },
+                }}
+              />
+            </Box>
+
+            {/* Sélecteur d'appareil */}
+            <IconButton
+              onClick={(event) => {
+                setDeviceMenuAnchor(event.currentTarget);
+                fetchDevices();
+              }}
+              disabled={connectionStatus !== 'connected'}
+              sx={{ 
+                color: 'white',
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' }
+              }}
+            >
+              <Devices />
+            </IconButton>
+          </Box>
+        )}
+      </Box>
+
+      {/* Menu flottant pour mobile - Volume et appareils (caché si appareil sélectionné est un téléphone) */}
+      {!isMobileDeviceSelected && (
         <Box sx={{ 
-          display: { xs: 'none', md: 'flex' },
+          display: { xs: 'flex', md: 'none' },
+          justifyContent: 'space-between',
           alignItems: 'center',
-          minWidth: 150,
-          justifyContent: 'flex-end'
+          mt: 2,
+          pt: 2,
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
-          {/* Contrôle de volume */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-            <VolumeUp sx={{ color: 'text.secondary', mr: 1 }} />
+          {/* Contrôle de volume mobile */}
+          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, mr: 2 }}>
+            <VolumeUp sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />
             <Slider
               value={volume}
               onChange={(e, newValue) => setVolume(newValue)}
               onChangeCommitted={handleVolumeChangeCommitted}
               sx={{
-                width: 80,
+                flex: 1,
                 color: '#1DB954',
                 '& .MuiSlider-thumb': {
-                  width: 12,
-                  height: 12,
+                  width: 16,
+                  height: 16,
+                },
+                '& .MuiSlider-track': {
+                  height: 4,
+                },
+                '& .MuiSlider-rail': {
+                  height: 4,
+                  color: 'rgba(255, 255, 255, 0.2)',
                 },
               }}
             />
           </Box>
 
-          {/* Sélecteur d'appareil */}
+          {/* Sélecteur d'appareil mobile */}
           <IconButton
             onClick={(event) => {
               setDeviceMenuAnchor(event.currentTarget);
@@ -549,65 +604,15 @@ const PlayerControls = () => {
             disabled={connectionStatus !== 'connected'}
             sx={{ 
               color: 'white',
+              width: 44,
+              height: 44,
               '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' }
             }}
           >
-            <Devices />
+            <Devices sx={{ fontSize: 24 }} />
           </IconButton>
         </Box>
-      </Box>
-
-      {/* Menu flottant pour mobile - Volume et appareils */}
-      <Box sx={{ 
-        display: { xs: 'flex', md: 'none' },
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        mt: 2,
-        pt: 2,
-        borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-      }}>
-        {/* Contrôle de volume mobile */}
-        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, mr: 2 }}>
-          <VolumeUp sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />
-          <Slider
-            value={volume}
-            onChange={(e, newValue) => setVolume(newValue)}
-            onChangeCommitted={handleVolumeChangeCommitted}
-            sx={{
-              flex: 1,
-              color: '#1DB954',
-              '& .MuiSlider-thumb': {
-                width: 16,
-                height: 16,
-              },
-              '& .MuiSlider-track': {
-                height: 4,
-              },
-              '& .MuiSlider-rail': {
-                height: 4,
-                color: 'rgba(255, 255, 255, 0.2)',
-              },
-            }}
-          />
-        </Box>
-
-        {/* Sélecteur d'appareil mobile */}
-        <IconButton
-          onClick={(event) => {
-            setDeviceMenuAnchor(event.currentTarget);
-            fetchDevices();
-          }}
-          disabled={connectionStatus !== 'connected'}
-          sx={{ 
-            color: 'white',
-            width: 44,
-            height: 44,
-            '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' }
-          }}
-        >
-          <Devices sx={{ fontSize: 24 }} />
-        </IconButton>
-      </Box>
+      )}
 
       {/* Menu des appareils */}
       <Menu

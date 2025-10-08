@@ -19,7 +19,7 @@ export const SocketProvider = ({ children, socket }) => {
     currentTrack: null,
     position: 0,
     queue: [],
-    controller: null
+    fetcher: null
   });
   const [messages, setMessages] = useState([]);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
@@ -34,14 +34,15 @@ export const SocketProvider = ({ children, socket }) => {
     }
 
     // Si l'utilisateur vient de s'authentifier
-    if (authenticated && user && socket.connected) {
-      console.log('👤 Enregistrement utilisateur auprès du serveur:', user.display_name);
-      socket.emit('user_connected', {
-        name: user.display_name,
-        spotifyId: user.id,
-        avatar: user.images?.[0]?.url || null
-      });
-    }
+      if (authenticated && user && socket.connected) {
+        console.log('👤 Enregistrement utilisateur auprès du serveur:', user.display_name);
+        socket.emit('user_connected', {
+          name: user.display_name,
+          spotifyId: user.id,
+          avatar: user.images?.[0]?.url || null,
+          premium: user.product === 'premium'
+        });
+      }
 
     // Événements de connexion
     socket.on('connect', () => {
@@ -54,7 +55,8 @@ export const SocketProvider = ({ children, socket }) => {
         socket.emit('user_connected', {
           name: user.display_name,
           spotifyId: user.id,
-          avatar: user.images?.[0]?.url || null
+          avatar: user.images?.[0]?.url || null,
+          premium: user.product === 'premium'
         });
       }
     });
@@ -118,6 +120,85 @@ export const SocketProvider = ({ children, socket }) => {
       }));
     });
 
+    // Handler: perform_playback_control (server forwards control requests to the fetcher client)
+    socket.on('perform_playback_control', async (data) => {
+      console.log('🔁 perform_playback_control reçu (fetcher):', data);
+      addSystemMessage(`🔁 Exécution action demandée par ${data.requestedBy}: ${data.action.type}`, 'info');
+
+      try {
+  const action = data.action || {};
+  const opts = { method: 'GET', headers: { 'Content-Type': 'application/json' }, credentials: 'include' };
+
+        let url = null;
+        let body = null;
+
+        switch (action.type) {
+          case 'next':
+            url = '/api/spotify/next';
+            opts.method = 'POST';
+            break;
+          case 'previous':
+            url = '/api/spotify/previous';
+            opts.method = 'POST';
+            break;
+          case 'play':
+            url = '/api/spotify/play';
+            opts.method = 'PUT';
+            body = action.payload || undefined;
+            break;
+          case 'pause':
+            url = '/api/spotify/pause';
+            opts.method = 'PUT';
+            break;
+          case 'seek':
+            url = '/api/spotify/seek';
+            opts.method = 'PUT';
+            body = { position_ms: action.payload?.position_ms };
+            break;
+          case 'volume':
+            url = '/api/spotify/volume';
+            opts.method = 'PUT';
+            body = { volume_percent: action.payload?.volume_percent };
+            break;
+          case 'device':
+            url = '/api/spotify/device';
+            opts.method = 'PUT';
+            body = { device_ids: action.payload?.device_ids, play: action.payload?.play };
+            break;
+          case 'play_track':
+            url = '/api/spotify/play-track';
+            opts.method = 'POST';
+            body = { uri: action.payload?.uri, device_id: action.payload?.device_id };
+            break;
+          default:
+            console.log('ℹ️ Action non supportée par perform_playback_control:', action.type);
+            socket.emit('perform_playback_result', { success: false, reason: 'unsupported_action', action: action.type, requestedBy: data.requestedBy });
+            return;
+        }
+
+        if (body) opts.body = JSON.stringify(body);
+
+        // Execute the API request; using relative path ensures cookies/session are sent
+        const res = await fetch(url, opts);
+
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('❌ perform_playback_control failed:', text);
+          socket.emit('perform_playback_result', { success: false, reason: text, action: action.type, requestedBy: data.requestedBy });
+          return;
+        }
+
+        // Notify server and trigger a sync so all clients get updated playback state
+        socket.emit('perform_playback_result', { success: true, action: action.type, requestedBy: data.requestedBy });
+        socket.emit('request_sync');
+        addSystemMessage(`✅ Action ${action.type} effectuée pour ${data.requestedBy}`, 'success');
+      } catch (err) {
+        console.error('❌ Erreur perform_playback_control:', err);
+        socket.emit('perform_playback_result', { success: false, reason: err.message, requestedBy: data.requestedBy });
+        addSystemMessage(`❌ Échec action pour ${data.requestedBy}: ${err.message}`, 'warning');
+      }
+    });
+
     // Événements de chat
     socket.on('chat_message_received', (message) => {
       console.log('💬 Message reçu du serveur:', message);
@@ -171,6 +252,7 @@ export const SocketProvider = ({ children, socket }) => {
       socket.off('play_track_from_queue');
       socket.off('chat_message_received');
       socket.off('search_results_shared');
+      socket.off('perform_playback_control');
       socket.off('force_disconnect');
       socket.off('full_sync');
     };

@@ -26,12 +26,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 
 const PlayerControls = () => {
-  const { API_BASE_URL, refreshToken } = useAuth();
+  const { API_BASE_URL, refreshToken, user } = useAuth();
   const { 
     playbackState, 
     emitPlaybackControl, 
-    emitPlaybackStateChange,
-    emitPlayNextFromQueue
+    emitPlaybackStateChange
   } = useSocket();
 
   const [currentTrack, setCurrentTrack] = useState(null);
@@ -67,7 +66,7 @@ const PlayerControls = () => {
             currentTrack: data.item,
             isPlaying: data.is_playing,
             position: data.progress_ms || 0,
-            controller: null
+            fetcher: null
           });
         } else {
           // Aucune musique en cours
@@ -107,12 +106,21 @@ const PlayerControls = () => {
 
   // Polling régulier de l'état Spotify
   useEffect(() => {
+    const amIFetcher = playbackState?.fetcher && (playbackState.fetcher.spotifyId === user?.id || playbackState.fetcher.name === user?.display_name);
+    const noFetcher = !playbackState?.fetcher;
+    const canFetch = amIFetcher || (noFetcher && user?.product === 'premium');
+
+    if (!canFetch) {
+      // If we're not the fetcher, rely on socket updates only
+      return;
+    }
+
     fetchPlaybackState();
     fetchDevices();
-    
+    // Poll at 2s for the fetcher to reduce API usage
     const interval = setInterval(fetchPlaybackState, 1000);
     return () => clearInterval(interval);
-  }, [fetchPlaybackState, fetchDevices, rateLimited]);
+  }, [fetchPlaybackState, fetchDevices, rateLimited, playbackState, user]);
 
   // Synchroniser avec les événements socket
   useEffect(() => {
@@ -188,27 +196,9 @@ const PlayerControls = () => {
 
   const handleNext = async () => {
     try {
-      // D'abord essayer de jouer depuis la queue
-      const queueResponse = await fetch(`${API_BASE_URL}/api/spotify/queue/next`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-      
-      if (queueResponse.ok) {
-        console.log('✅ Titre suivant joué depuis la queue');
-        emitPlayNextFromQueue();
-      } else {
-        // Fallback sur next Spotify classique
-        const response = await fetch(`${API_BASE_URL}/api/spotify/next`, {
-          method: 'POST',
-          credentials: 'include'
-        });
-        
-        if (response.ok) {
-          emitPlaybackControl('next');
-        }
-      }
-      
+      // Delegate the 'next' action to the server so it can coordinate queue vs Spotify
+      emitPlaybackControl('next');
+      // Refresh local state shortly after
       setTimeout(fetchPlaybackState, 500);
     } catch (error) {
       console.error('Erreur lors du passage au titre suivant:', error);

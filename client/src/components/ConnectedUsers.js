@@ -33,8 +33,10 @@ const ConnectedUsers = () => {
   };
 
   const getUserStatus = (user) => {
-    if (playbackState.controller === user.name) {
-      return { label: 'Contrôleur', color: 'primary' };
+    // If current fetcher matches this user, mark them as Fetcher
+    const fetcherId = playbackState?.fetcher?.spotifyId || playbackState?.fetcher?.id || playbackState?.fetcher;
+    if (fetcherId && (fetcherId === user.spotifyId || fetcherId === user.id || fetcherId === user.name)) {
+      return { label: 'Fetcher', color: 'primary' };
     }
     return { label: 'Connecté', color: 'success' };
   };
@@ -86,6 +88,14 @@ const ConnectedUsers = () => {
                         color={status.color}
                         sx={{ height: 18, fontSize: '0.7rem' }}
                       />
+                      {user.premium && (
+                        <Chip
+                          label="Premium"
+                          size="small"
+                          color="secondary"
+                          sx={{ height: 18, fontSize: '0.7rem' }}
+                        />
+                      )}
                     </Box>
                   }
                   secondary={
@@ -138,9 +148,9 @@ const ConnectedUsers = () => {
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
             Total: {connectedUsers.length} utilisateur{connectedUsers.length > 1 ? 's' : ''}
           </Typography>
-          {playbackState.controller && (
+          {playbackState.fetcher && (
             <Typography variant="caption" color="primary" sx={{ display: 'block' }}>
-              Contrôleur actuel: {playbackState.controller}
+              Fetcher actif: {playbackState.fetcher?.name || playbackState.fetcher}
             </Typography>
           )}
           {playbackState.queue && playbackState.queue.length > 0 && (
