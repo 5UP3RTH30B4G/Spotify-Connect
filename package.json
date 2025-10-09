@@ -1,5 +1,5 @@
 {
-  "name": "spotify-connect-remastered",
+  "name": "spotify-connect",
   "version": "1.0.1",
   "description": "Application collaborative pour contrôler Spotify à plusieurs utilisateurs",
   "main": "server/index.js",

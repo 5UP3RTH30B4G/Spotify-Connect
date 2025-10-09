@@ -194,7 +194,7 @@ L'application est organisée en plusieurs sections :
 
 ### Structure du projet
 ```
-spotify-connect-remastered/
+spotify-connect/
 ├── server/              # Backend Node.js
 │   ├── routes/         # Routes API
 │   ├── socket/         # Gestion Socket.IO
