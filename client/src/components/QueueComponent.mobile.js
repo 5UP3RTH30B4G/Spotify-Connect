@@ -31,8 +31,18 @@ const QueueComponent = () => {
     try {
       await axios.post(`${API_BASE_URL}/api/spotify/play-track`, {
         uri: track.uri
+      }, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' }
       });
       console.log('✅ Track joué avec succès:', track.name);
+      // Après une lecture réussie, demander la suppression de la piste de la file d'attente
+      try {
+        emitTrackRemovedFromQueue(track.id);
+        console.log('🗑️ Emis suppression de la piste jouée de la file:', track.id);
+      } catch (err) {
+        console.warn('⚠️ Impossible d\'émettre la suppression de la queue après play:', err);
+      }
     } catch (error) {
       console.error('❌ Erreur lors de la lecture du track:', error);
       alert('Erreur: ' + (error.response?.data?.error || 'Impossible de jouer cette chanson'));
