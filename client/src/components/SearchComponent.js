@@ -58,7 +58,8 @@ const SearchComponent = ({ onTrackQueued }) => {
   };
 
   const searchTracks = useCallback(async (searchQuery) => {
-    if (!searchQuery || searchQuery.length < 2) {
+    // Allow searches for any non-empty query (previously required >=2 chars)
+    if (!searchQuery) {
       setResults([]);
       return;
     }
@@ -75,7 +76,7 @@ const SearchComponent = ({ onTrackQueued }) => {
         const tracks = data.tracks?.items || [];
         console.log('🎵 Résultats trouvés:', tracks.length, 'tracks');
         // Afficher tous les résultats sans limitation
-        setResults(tracks);
+  setResults(tracks);
 
         // Émettre les résultats au serveur pour synchronisation
         socket?.emit('searchResults', {
@@ -167,7 +168,7 @@ const SearchComponent = ({ onTrackQueued }) => {
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
-          if (e.target.value.length > 2) {
+          if (e.target.value.length > 0) {
             handleSearch(e.target.value);
           } else if (e.target.value.length === 0) {
             setResults([]);
@@ -246,7 +247,7 @@ const SearchComponent = ({ onTrackQueued }) => {
           </Typography>
         )}
 
-        {results.length === 0 && query.length > 2 && !loading && (
+        {results.length === 0 && query.length > 0 && !loading && (
           <Typography 
             variant="body2" 
             color="text.secondary" 
@@ -260,7 +261,7 @@ const SearchComponent = ({ onTrackQueued }) => {
           </Typography>
         )}
 
-        {results.length === 0 && query.length <= 2 && !loading && (
+        {results.length === 0 && query.length === 0 && !loading && (
           <Typography 
             variant="body2" 
             color="text.secondary" 

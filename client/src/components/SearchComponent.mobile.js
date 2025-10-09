@@ -49,7 +49,8 @@ const SearchComponent = ({ socket, onTrackQueued }) => {
   };
 
   const searchTracks = useCallback(async (searchQuery) => {
-    if (!searchQuery || searchQuery.length < 2) {
+    // Allow searches for any non-empty query (previously required >=2 chars)
+    if (!searchQuery) {
       setResults([]);
       return;
     }
@@ -125,7 +126,7 @@ const SearchComponent = ({ socket, onTrackQueued }) => {
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
-          if (e.target.value.length > 2) {
+          if (e.target.value.length > 0) {
             handleSearch(e.target.value);
           } else if (e.target.value.length === 0) {
             setResults([]);
@@ -202,7 +203,7 @@ const SearchComponent = ({ socket, onTrackQueued }) => {
           </Typography>
         )}
 
-        {results.length === 0 && query.length > 2 && !loading && (
+        {results.length === 0 && query.length > 0 && !loading && (
           <Typography 
             variant="body2" 
             color="text.secondary" 
@@ -216,7 +217,7 @@ const SearchComponent = ({ socket, onTrackQueued }) => {
           </Typography>
         )}
 
-        {results.length === 0 && query.length <= 2 && !loading && (
+        {results.length === 0 && query.length === 0 && !loading && (
           <Typography 
             variant="body2" 
             color="text.secondary" 
