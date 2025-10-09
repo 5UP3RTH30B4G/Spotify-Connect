@@ -85,10 +85,10 @@ build/
 dist/
 
 # Production client build upload path (server-side)
-/var/www/spotify-connect/client/build/
+/var/www/Sound-Party/client/build/
 
 # Logs and runtime (server-side)
-/var/www/spotify-connect/logs/
+/var/www/Sound-Party/logs/
 logs/
 
 # OS generated files

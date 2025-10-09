@@ -90,13 +90,7 @@ const LoginPage = () => {
             WebkitTextFillColor: 'transparent',
             mb: 1
           }}>
-            Spotify Connect
-          </Typography>
-          <Typography variant="h5" component="h2" sx={{ 
-            color: 'text.secondary',
-            fontWeight: 300
-          }}>
-            Remastered
+            Sound Party
           </Typography>
         </Box>
 
@@ -174,7 +168,7 @@ const LoginPage = () => {
           color: 'text.secondary',
           fontStyle: 'italic'
         }}>
-          Note: Vous devez avoir un compte Spotify Premium pour contrôler la lecture
+          Note: Vous devez avoir un compte Spotify Premium ou avoir une personne avec un compte Premium pour contrôler la lecture
         </Typography>
       </Paper>
     </Container>

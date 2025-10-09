@@ -49,7 +49,7 @@ if "%NEW_USER%"=="" set "NEW_USER=root"
 REM Chemin de déploiement
 set /p "NEW_PATH=Chemin de déploiement [%CURRENT_PATH%]: "
 if "%NEW_PATH%"=="" set "NEW_PATH=%CURRENT_PATH%"
-if "%NEW_PATH%"=="" set "NEW_PATH=/var/www/spotify-connect"
+if "%NEW_PATH%"=="" set "NEW_PATH=/var/www/Sound-Party"
 
 echo.
 echo 📝 Nouvelle configuration:
@@ -68,7 +68,7 @@ if /i not "%CONFIRM%"=="o" if /i not "%CONFIRM%"=="oui" (
 REM Créer le fichier de configuration
 echo 💾 Sauvegarde de la configuration...
 (
-echo # Configuration de déploiement Spotify Connect
+echo # Configuration de déploiement Sound Party
 echo # Généré automatiquement le %date% à %time%
 echo.
 echo # Serveur de déploiement

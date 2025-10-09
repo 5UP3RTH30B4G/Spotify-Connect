@@ -89,5 +89,5 @@ app.get('/health', (req, res) => {
 server.listen(PORT, () => {
   const protocol = isProduction ? 'HTTPS' : 'HTTP';
   console.log(`🚀 Serveur ${protocol} démarré sur le port ${PORT}`);
-  console.log(`${isProduction ? '🔒' : '🔓'} Spotify Connect Backend ${isProduction ? 'avec SSL' : 'en mode développement'}`);
+  console.log(`${isProduction ? '🔒' : '🔓'} Sound Party Backend ${isProduction ? 'avec SSL' : 'en mode développement'}`);
 });

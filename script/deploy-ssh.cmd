@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 
 echo.
 echo ============================================
-echo    🚀 DEPLOIEMENT SPOTIFY CONNECT (SSH)
+echo    🚀 DEPLOIEMENT Sound Party (SSH)
 echo ============================================
 
 REM Lecture de la configuration
@@ -87,7 +87,7 @@ echo 📦 Installation de PM2...
 ssh -o PreferredAuthentications=password %DEPLOY_USER%@%DEPLOY_HOST% "command -v pm2 >/dev/null || npm install -g pm2"
 
 echo ⏹️ Arrêt de l'ancienne version...
-ssh -o PreferredAuthentications=password %DEPLOY_USER%@%DEPLOY_HOST% "pm2 stop spotify-connect 2>/dev/null || true && pm2 delete spotify-connect 2>/dev/null || true"
+ssh -o PreferredAuthentications=password %DEPLOY_USER%@%DEPLOY_HOST% "pm2 stop Sound-Party 2>/dev/null || true && pm2 delete Sound-Party 2>/dev/null || true"
 
 echo 🚀 Démarrage de l'application...
 ssh -o PreferredAuthentications=password %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH% && pm2 start ecosystem.config.js && pm2 save"
@@ -101,8 +101,8 @@ if %errorlevel% equ 0 (
     echo.
     echo 📋 Prochaines étapes:
     echo    1. Configurez vos clés Spotify dans %DEPLOY_PATH%/server/.env
-    echo    2. Redémarrez l'app: ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH% && pm2 restart spotify-connect"
-    echo    3. Vérifiez les logs: ssh %DEPLOY_USER%@%DEPLOY_HOST% "pm2 logs spotify-connect"
+    echo    2. Redémarrez l'app: ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH% && pm2 restart Sound-Party"
+    echo    3. Vérifiez les logs: ssh %DEPLOY_USER%@%DEPLOY_HOST% "pm2 logs Sound-Party"
     echo.
     echo 🌐 Application accessible à: https://%DEPLOY_HOST%
 ) else (

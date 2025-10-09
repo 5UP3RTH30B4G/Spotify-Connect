@@ -268,7 +268,7 @@ const PlayerControls = () => {
                     {currentTrack.name}
                   </Typography>
                   <Typography className="mobile-track-artist">
-                    {currentTrack.artists?.map(artist => artist.name).join(', ')}
+                    {(currentTrack.artists && currentTrack.artists.map(artist => artist.name).join(', ')) || ''}
                   </Typography>
                 </Box>
                 <IconButton
@@ -495,7 +495,7 @@ const PlayerControls = () => {
                 {currentTrack.name}
               </Typography>
               <Typography variant="body2" color="rgba(255,255,255,0.7)" noWrap>
-                {currentTrack.artists?.map(artist => artist.name).join(', ')}
+                {(currentTrack.artists && currentTrack.artists.map(artist => artist.name).join(', ')) || ''}
               </Typography>
               <Typography variant="caption" color="rgba(255,255,255,0.5)">
                 {currentTrack.album?.name}

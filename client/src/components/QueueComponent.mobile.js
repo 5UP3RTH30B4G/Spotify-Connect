@@ -202,12 +202,12 @@ const QueueComponent = () => {
                     }}>
                       <Typography 
                         variant="body2" 
-                        className={`scrolling-text ${track.name.length > 12 ? 'scrolling-text-active' : 'scrolling-text-inactive'}`}
+                        className={`scrolling-text ${((track.name || '').length) > 12 ? 'scrolling-text-active' : 'scrolling-text-inactive'}`}
                         sx={{ 
                           color: 'white',
                           fontWeight: 'medium',
                           fontSize: { xs: '0.8rem', sm: '0.85rem' },
-                          animationName: track.name.length > 12 ? 'scrollTextQueueComplete' : 'none'
+                          animationName: ((track.name || '').length) > 12 ? 'scrollTextQueueComplete' : 'none'
                         }}
                       >
                         {track.name}

@@ -58,18 +58,24 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/auth/status`);
       console.log('📡 Réponse du serveur:', response.data);
+      console.log('📡 Status de la réponse:', response.status);
+      console.log('📡 Headers de la réponse:', response.headers);
       
       if (response.data.authenticated) {
         console.log('✅ Utilisateur authentifié:', response.data.user?.display_name);
         setUser(response.data.user);
         setAuthenticated(true);
       } else {
-        console.log('❌ Utilisateur non authentifié');
+        console.log('❌ Utilisateur non authentifié - reason:', response.data.reason || 'non spécifiée');
+        console.log('❌ Cookies présents:', document.cookie);
         setUser(null);
         setAuthenticated(false);
       }
     } catch (error) {
       console.error('❌ Erreur lors de la vérification du statut d\'authentification:', error);
+      console.error('❌ Response data:', error.response?.data);
+      console.error('❌ Response status:', error.response?.status);
+      console.error('❌ Cookies au moment de l\'erreur:', document.cookie);
       setUser(null);
       setAuthenticated(false);
     } finally {

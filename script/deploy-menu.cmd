@@ -136,7 +136,7 @@ echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo '# Session
 echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo 'SESSION_SECRET=spotify_connect_secret_$(date +%%%%s)' ^>^> .env" >> temp_env_config.cmd
 echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo '' ^>^> .env" >> temp_env_config.cmd
 echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo '# Frontend URL' ^>^> .env" >> temp_env_config.cmd
-echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo 'CLIENT_URL=https://%DEPLOY_HOST%' ^>^> .env && echo '✅ Fichier .env configuré!' && echo 'Redémarrage de l application...' && cd %DEPLOY_PATH% && pm2 restart spotify-connect && pm2 status" >> temp_env_config.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH%/server && echo 'CLIENT_URL=https://%DEPLOY_HOST%' ^>^> .env && echo '✅ Fichier .env configuré!' && echo 'Redémarrage de l application...' && cd %DEPLOY_PATH% && pm2 restart Sound-Party && pm2 status" >> temp_env_config.cmd
 
 :: Vérifier si le mot de passe SSH est sauvegardé pour utilisation automatique
 if exist "%~dp0ssh-credentials.dat" (
@@ -186,8 +186,8 @@ echo    └── package.json
 echo.
 echo 5. COMMANDES UTILES SUR LE SERVEUR:
 echo    pm2 status            # Voir le statut
-echo    pm2 logs spotify-connect  # Voir les logs
-echo    pm2 restart spotify-connect  # Redémarrer
+echo    pm2 logs Sound-Party  # Voir les logs
+echo    pm2 restart Sound-Party  # Redémarrer
 echo    nano %DEPLOY_PATH%/server/.env  # Modifier config
 echo.
 echo 6. DÉPANNAGE:

@@ -26,77 +26,136 @@ const requireAuth = (req, res, next) => {
   next();
 };
 
+const rateLimiter = require('../utils/rateLimiter');
+const socketHandler = require('../socket/socketHandler');
+
+// Helper to call Spotify and handle 429 global backoff
+const callSpotify = async (axiosConfig) => {
+  if (rateLimiter.isLimited()) {
+    const ms = rateLimiter.getRemainingMs();
+    const err = new Error('Rate limited by server');
+    err.status = 429;
+    err.ms = ms;
+    throw err;
+  }
+
+  try {
+    return await axios(axiosConfig);
+  } catch (err) {
+    const status = err?.response?.status;
+    if (status === 429) {
+      // Trigger a short global cooldown and notify clients
+      const ms = rateLimiter.trigger(10); // 10s default
+      try {
+        socketHandler.notifyRateLimit(ms);
+      } catch (e) {
+        console.warn('⚠️ Failed to notify clients about rate limit', e);
+      }
+      const e2 = new Error('Spotify rate limited');
+      e2.status = 429;
+      e2.ms = ms;
+      throw e2;
+    }
+    throw err;
+  }
+};
+
 // Obtenir l'état de lecture actuel
 router.get('/playback-state', requireAuth, async (req, res) => {
   try {
-    const response = await axios.get('https://api.spotify.com/v1/me/player', {
+    const response = await callSpotify({
+      method: 'get',
+      url: 'https://api.spotify.com/v1/me/player',
       headers: { 'Authorization': 'Bearer ' + req.access_token }
     });
-    
+
     if (response.status === 204) {
       return res.json({ active: false });
     }
-    
-    res.json(response.data);
+
+    return res.json(response.data);
   } catch (error) {
+    if (error.status === 429) {
+      return res.status(429).json({ error: 'Rate limited', ms: error.ms });
+    }
     if (error.response?.status === 204) {
       return res.json({ active: false });
     }
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.error?.message || error.message || 'Erreur lors de la récupération de l\'état de lecture';
     console.error('Erreur playback state:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Erreur lors de la récupération de l\'état de lecture' });
+    return res.status(status).json({ error: message });
   }
 });
 
 // Lire/Pause
 router.put('/play', requireAuth, async (req, res) => {
   try {
-    await axios.put('https://api.spotify.com/v1/me/player/play', 
-      req.body, 
-      {
-        headers: { 'Authorization': 'Bearer ' + req.access_token }
-      }
-    );
+    await callSpotify({
+      method: 'put',
+      url: 'https://api.spotify.com/v1/me/player/play',
+      headers: { 'Authorization': 'Bearer ' + req.access_token },
+      data: req.body
+    });
     res.json({ success: true });
   } catch (error) {
-    console.error('Erreur play:', error.response?.data || error.message);
-    res.status(500).json({ error: error.response?.data?.error?.message || 'Erreur lors de la lecture' });
+    if (error.status === 429) return res.status(429).json({ error: 'Rate limited', ms: error.ms });
+      const status = error.response?.status || 500;
+      const message = error.response?.data?.error?.message || error.message || 'Erreur lors de la lecture';
+      console.error('Erreur play:', error.response?.data || error.message);
+      return res.status(status).json({ error: message });
   }
 });
 
 router.put('/pause', requireAuth, async (req, res) => {
   try {
-    await axios.put('https://api.spotify.com/v1/me/player/pause', {}, {
+    await callSpotify({
+      method: 'put',
+      url: 'https://api.spotify.com/v1/me/player/pause',
       headers: { 'Authorization': 'Bearer ' + req.access_token }
     });
     res.json({ success: true });
   } catch (error) {
-    console.error('Erreur pause:', error.response?.data || error.message);
-    res.status(500).json({ error: error.response?.data?.error?.message || 'Erreur lors de la pause' });
+    if (error.status === 429) return res.status(429).json({ error: 'Rate limited', ms: error.ms });
+      const status = error.response?.status || 500;
+      const message = error.response?.data?.error?.message || error.message || 'Erreur lors de la pause';
+      console.error('Erreur pause:', error.response?.data || error.message);
+      return res.status(status).json({ error: message });
   }
 });
 
 // Chanson suivante/précédente
 router.post('/next', requireAuth, async (req, res) => {
   try {
-    await axios.post('https://api.spotify.com/v1/me/player/next', {}, {
+    await callSpotify({
+      method: 'post',
+      url: 'https://api.spotify.com/v1/me/player/next',
       headers: { 'Authorization': 'Bearer ' + req.access_token }
     });
     res.json({ success: true });
   } catch (error) {
+    if (error.status === 429) return res.status(429).json({ error: 'Rate limited', ms: error.ms });
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.error?.message || error.message || 'Erreur lors du passage à la chanson suivante';
     console.error('Erreur next:', error.response?.data || error.message);
-    res.status(500).json({ error: error.response?.data?.error?.message || 'Erreur lors du passage à la chanson suivante' });
+    return res.status(status).json({ error: message });
   }
 });
 
 router.post('/previous', requireAuth, async (req, res) => {
   try {
-    await axios.post('https://api.spotify.com/v1/me/player/previous', {}, {
+    await callSpotify({
+      method: 'post',
+      url: 'https://api.spotify.com/v1/me/player/previous',
       headers: { 'Authorization': 'Bearer ' + req.access_token }
     });
     res.json({ success: true });
   } catch (error) {
-    console.error('Erreur previous:', error.response?.data || error.message);
-    res.status(500).json({ error: error.response?.data?.error?.message || 'Erreur lors du passage à la chanson précédente' });
+    if (error.status === 429) return res.status(429).json({ error: 'Rate limited', ms: error.ms });
+      const status = error.response?.status || 500;
+      const message = error.response?.data?.error?.message || error.message || 'Erreur lors du passage à la chanson précédente';
+      console.error('Erreur previous:', error.response?.data || error.message);
+      return res.status(status).json({ error: message });
   }
 });
 
@@ -109,15 +168,19 @@ router.get('/search', requireAuth, async (req, res) => {
   }
 
   try {
-    const response = await axios.get('https://api.spotify.com/v1/search', {
+    const response = await callSpotify({
+      method: 'get',
+      url: 'https://api.spotify.com/v1/search',
       headers: { 'Authorization': 'Bearer ' + req.access_token },
       params: { q, type, limit }
     });
-    
     res.json(response.data);
   } catch (error) {
-    console.error('Erreur search:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Erreur lors de la recherche' });
+    if (error.status === 429) return res.status(429).json({ error: 'Rate limited', ms: error.ms });
+      const status = error.response?.status || 500;
+      const message = error.response?.data?.error?.message || error.message || 'Erreur lors de la recherche';
+      console.error('Erreur search:', error.response?.data || error.message);
+      return res.status(status).json({ error: message });
   }
 });
 
@@ -130,14 +193,19 @@ router.post('/queue', requireAuth, async (req, res) => {
   }
 
   try {
-    await axios.post('https://api.spotify.com/v1/me/player/queue', {}, {
+    await callSpotify({
+      method: 'post',
+      url: 'https://api.spotify.com/v1/me/player/queue',
       headers: { 'Authorization': 'Bearer ' + req.access_token },
       params: { uri }
     });
     res.json({ success: true });
   } catch (error) {
+    if (error.status === 429) return res.status(429).json({ error: 'Rate limited', ms: error.ms });
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.error?.message || error.message || 'Erreur lors de l\'ajout à la file d\'attente';
     console.error('Erreur queue:', error.response?.data || error.message);
-    res.status(500).json({ error: error.response?.data?.error?.message || 'Erreur lors de l\'ajout à la file d\'attente' });
+    return res.status(status).json({ error: message });
   }
 });
 
@@ -159,12 +227,12 @@ router.post('/queue/next', requireAuth, async (req, res) => {
     console.log('🎵 Prochaine chanson à jouer:', nextTrack.name, 'par', nextTrack.artists?.[0]?.name || 'Artiste inconnu');
     
     // Jouer le track sur Spotify
-    await axios.put('https://api.spotify.com/v1/me/player/play', 
-      { uris: [nextTrack.uri] },
-      {
-        headers: { 'Authorization': 'Bearer ' + req.access_token }
-      }
-    );
+    await callSpotify({
+      method: 'put',
+      url: 'https://api.spotify.com/v1/me/player/play',
+      headers: { 'Authorization': 'Bearer ' + req.access_token },
+      data: { uris: [nextTrack.uri] }
+    });
     
     // Supprimer le track de la queue locale
     const removedTrack = socketHandler.removeFirstFromQueue();
@@ -177,23 +245,29 @@ router.post('/queue/next', requireAuth, async (req, res) => {
     });
     
   } catch (error) {
+    if (error.status === 429) return res.status(429).json({ error: 'Rate limited', ms: error.ms });
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.error?.message || error.message || 'Erreur lors de la lecture depuis la queue';
     console.error('❌ Erreur lors de la lecture depuis la queue:', error.response?.data || error.message);
-    res.status(500).json({ 
-      error: error.response?.data?.error?.message || 'Erreur lors de la lecture depuis la queue' 
-    });
+    return res.status(status).json({ error: message });
   }
 });
 
 // Obtenir les appareils disponibles
 router.get('/devices', requireAuth, async (req, res) => {
   try {
-    const response = await axios.get('https://api.spotify.com/v1/me/player/devices', {
+    const response = await callSpotify({
+      method: 'get',
+      url: 'https://api.spotify.com/v1/me/player/devices',
       headers: { 'Authorization': 'Bearer ' + req.access_token }
     });
     res.json(response.data);
   } catch (error) {
-    console.error('Erreur devices:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Erreur lors de la récupération des appareils' });
+    if (error.status === 429) return res.status(429).json({ error: 'Rate limited', ms: error.ms });
+      const status = error.response?.status || 500;
+      const message = error.response?.data?.error?.message || error.message || 'Erreur lors de la récupération des appareils';
+      console.error('Erreur devices:', error.response?.data || error.message);
+      return res.status(status).json({ error: message });
   }
 });
 
@@ -216,18 +290,21 @@ router.post('/play-track', requireAuth, async (req, res) => {
       playData.device_id = device_id;
     }
 
-    await axios.put('https://api.spotify.com/v1/me/player/play', 
-      playData,
-      {
-        headers: { 'Authorization': 'Bearer ' + req.access_token }
-      }
-    );
+    await callSpotify({
+      method: 'put',
+      url: 'https://api.spotify.com/v1/me/player/play',
+      headers: { 'Authorization': 'Bearer ' + req.access_token },
+      data: playData
+    });
     
     console.log('✅ Track joué avec succès:', uri);
     res.json({ success: true });
   } catch (error) {
+    if (error.status === 429) return res.status(429).json({ error: 'Rate limited', ms: error.ms });
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.error?.message || error.message || 'Erreur lors de la lecture du track';
     console.error('❌ Erreur lors de la lecture du track:', error.response?.data || error.message);
-    res.status(500).json({ error: error.response?.data?.error?.message || 'Erreur lors de la lecture du track' });
+    return res.status(status).json({ error: message });
   }
 });
 
@@ -236,16 +313,19 @@ router.put('/device', requireAuth, async (req, res) => {
   const { device_ids, play } = req.body;
   
   try {
-    await axios.put('https://api.spotify.com/v1/me/player', 
-      { device_ids, play },
-      {
-        headers: { 'Authorization': 'Bearer ' + req.access_token }
-      }
-    );
+    await callSpotify({
+      method: 'put',
+      url: 'https://api.spotify.com/v1/me/player',
+      headers: { 'Authorization': 'Bearer ' + req.access_token },
+      data: { device_ids, play }
+    });
     res.json({ success: true });
   } catch (error) {
+    if (error.status === 429) return res.status(429).json({ error: 'Rate limited', ms: error.ms });
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.error?.message || error.message || 'Erreur lors du changement d\'appareil';
     console.error('Erreur device transfer:', error.response?.data || error.message);
-    res.status(500).json({ error: error.response?.data?.error?.message || 'Erreur lors du changement d\'appareil' });
+    return res.status(status).json({ error: message });
   }
 });
 
@@ -258,17 +338,19 @@ router.put('/volume', requireAuth, async (req, res) => {
   }
   
   try {
-    await axios.put(`https://api.spotify.com/v1/me/player/volume?volume_percent=${Math.round(volume_percent)}`, 
-      {},
-      {
-        headers: { 'Authorization': 'Bearer ' + req.access_token }
-      }
-    );
+    await callSpotify({
+      method: 'put',
+      url: `https://api.spotify.com/v1/me/player/volume?volume_percent=${Math.round(volume_percent)}`,
+      headers: { 'Authorization': 'Bearer ' + req.access_token }
+    });
     console.log('✅ Volume changé à:', volume_percent + '%');
     res.json({ success: true, volume_percent: volume_percent });
   } catch (error) {
+    if (error.status === 429) return res.status(429).json({ error: 'Rate limited', ms: error.ms });
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.error?.message || error.message || 'Erreur lors du changement de volume';
     console.error('❌ Erreur lors du changement de volume:', error.response?.data || error.message);
-    res.status(500).json({ error: error.response?.data?.error?.message || 'Erreur lors du changement de volume' });
+    return res.status(status).json({ error: message });
   }
 });
 
@@ -281,17 +363,19 @@ router.put('/seek', requireAuth, async (req, res) => {
   }
   
   try {
-    await axios.put(`https://api.spotify.com/v1/me/player/seek?position_ms=${Math.round(position_ms)}`, 
-      {},
-      {
-        headers: { 'Authorization': 'Bearer ' + req.access_token }
-      }
-    );
+    await callSpotify({
+      method: 'put',
+      url: `https://api.spotify.com/v1/me/player/seek?position_ms=${Math.round(position_ms)}`,
+      headers: { 'Authorization': 'Bearer ' + req.access_token }
+    });
     console.log('✅ Position changée à:', Math.round(position_ms) + 'ms');
     res.json({ success: true, position_ms: position_ms });
   } catch (error) {
+    if (error.status === 429) return res.status(429).json({ error: 'Rate limited', ms: error.ms });
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.error?.message || error.message || 'Erreur lors du changement de position';
     console.error('❌ Erreur lors du changement de position:', error.response?.data || error.message);
-    res.status(500).json({ error: error.response?.data?.error?.message || 'Erreur lors du changement de position' });
+    return res.status(status).json({ error: message });
   }
 });
 

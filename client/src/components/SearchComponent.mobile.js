@@ -282,12 +282,12 @@ const SearchComponent = ({ socket, onTrackQueued }) => {
                   }}>
                     <Typography 
                       variant="body1" 
-                      className={`scrolling-text ${track.name.length > 10 ? 'scrolling-text-active' : 'scrolling-text-inactive'}`}
+                      className={`scrolling-text ${((track.name || '').length) > 10 ? 'scrolling-text-active' : 'scrolling-text-inactive'}`}
                       sx={{ 
                         color: 'white',
                         fontWeight: 'medium',
                         fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                        animationName: track.name.length > 10 ? 'scrollTextSearchComplete' : 'none'
+                        animationName: ((track.name || '').length) > 10 ? 'scrollTextSearchComplete' : 'none'
                       }}
                     >
                       {track.name}
@@ -311,7 +311,7 @@ const SearchComponent = ({ socket, onTrackQueued }) => {
                         textOverflow: 'ellipsis'
                       }}
                     >
-                      {track.artists?.map(artist => artist.name).join(', ')}
+                      {(track.artists && track.artists.map(artist => artist.name).join(', ')) || ''}
                     </Typography>
                     <Box sx={{ 
                       display: 'flex', 

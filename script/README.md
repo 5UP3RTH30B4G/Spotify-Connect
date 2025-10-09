@@ -2,9 +2,9 @@
 - **`fix-mobile-ui.cmd`** - 🆕 Correction automatique de l'interface mobile
 
 ### 🔑 Scripts d'Authentification
-- **`setup-ssh-keys.cmd`** - 🆕 Configuration complète des clés SSHment SSH - Spotify Connect
+- **`setup-ssh-keys.cmd`** - 🆕 Configuration complète des clés SSHment SSH - Sound Party
 
-Ce dossier contient un système de déploiement complet pour l'application Spotify Connect utilisant l'authentification SSH par mot de passe, avec gestion automatisée des credentials.
+Ce dossier contient un système de déploiement complet pour l'application Sound Party utilisant l'authentification SSH par mot de passe, avec gestion automatisée des credentials.
 
 ## 📋 Scripts Disponibles
 
@@ -211,7 +211,7 @@ ssh root@scpearth.fr
 ## 📊 Structure de Déploiement
 
 ```
-/var/www/spotify-connect/
+/var/www/Sound-Party/
 ├── client/
 │   └── build/          # Frontend React optimisé (mobile-friendly)
 ├── server/
@@ -288,14 +288,14 @@ Une fois toutes les corrections appliquées :
 
 ---
 
-**🚀 Déploiement Spotify Connect Nouvelle Génération !**
+**🚀 Déploiement Sound Party Nouvelle Génération !**
 *Automatisé • Sécurisé • Mobile-Optimisé*
 
 ## 📁 Structure de Déploiement
 
 L'application sera déployée sur votre serveur dans cette structure :
 ```
-/var/www/spotify-connect/
+/var/www/Sound-Party/
 ├── client/
 │   └── build/          # Frontend React optimisé
 ├── server/
@@ -347,13 +347,13 @@ L'application nécessite des clés API Spotify :
 pm2 status
 
 # Voir les logs
-pm2 logs spotify-connect
+pm2 logs Sound-Party
 
 # Redémarrer
-pm2 restart spotify-connect
+pm2 restart Sound-Party
 
 # Modifier la configuration
-nano /var/www/spotify-connect/server/.env
+nano /var/www/Sound-Party/server/.env
 ```
 
 ## 🛠️ Dépannage
@@ -422,4 +422,4 @@ En cas de problème :
 
 ---
 
-**🎵 Bon déploiement avec Spotify Connect !**
+**🎵 Bon déploiement avec Sound Party !**

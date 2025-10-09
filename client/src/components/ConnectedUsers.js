@@ -12,23 +12,27 @@ import {
 } from '@mui/material';
 import { PersonAdd, MusicNote } from '@mui/icons-material';
 import { useSocket } from '../contexts/SocketContext';
+import { useAuth } from '../contexts/AuthContext';
+import { Button, CircularProgress } from '@mui/material';
 
 const ConnectedUsers = () => {
   const { connectedUsers, playbackState } = useSocket();
+  const { user: authUser, authenticated, refreshToken } = useAuth();
+  const [refreshing, setRefreshing] = React.useState({});
 
   const formatConnectedTime = (timestamp) => {
-    if (!timestamp) return 'Inconnu';
-    
+    if (!timestamp) return null;
+
     const now = new Date();
     const connected = new Date(timestamp);
     const diffMinutes = Math.floor((now - connected) / 60000);
-    
-    if (diffMinutes < 1) return 'À l\'instant';
-    if (diffMinutes < 60) return `Il y a ${diffMinutes}min`;
+
+    if (diffMinutes < 1) return "À l'instant";
+    if (diffMinutes < 60) return `${diffMinutes}min`;
     const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `Il y a ${diffHours}h`;
+    if (diffHours < 24) return `${diffHours}h`;
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `Il y a ${diffDays}j`;
+    if (diffDays < 7) return `${diffDays}j`;
     return connected.toLocaleDateString('fr-FR');
   };
 
@@ -92,9 +96,39 @@ const ConnectedUsers = () => {
                         <Chip
                           label="Premium"
                           size="small"
-                          color="secondary"
-                          sx={{ height: 18, fontSize: '0.7rem' }}
+                          sx={{
+                            height: 18,
+                            fontSize: '0.7rem',
+                            bgcolor: '#FFD700',
+                            color: '#000',
+                            fontWeight: 600,
+                            borderRadius: 1
+                          }}
                         />
+                      )}
+                      {/* If this entry is the local authenticated user but our auth state says unauthenticated,
+                          show it as disconnected and provide a refresh button to attempt token refresh. */}
+                      {authUser && (user.spotifyId === authUser.id) && !authenticated && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="primary"
+                            onClick={async () => {
+                              setRefreshing(r => ({ ...r, [user.spotifyId]: true }));
+                              try {
+                                await refreshToken();
+                                // refreshToken will update auth context; if successful the UI will update automatically
+                              } finally {
+                                setRefreshing(r => ({ ...r, [user.spotifyId]: false }));
+                              }
+                            }}
+                            disabled={!!refreshing[user.spotifyId]}
+                            title="Rafraîchir le token Spotify"
+                          >
+                            {refreshing[user.spotifyId] ? <CircularProgress size={14} color="inherit" /> : 'Rafraîchir'}
+                          </Button>
+                        </Box>
                       )}
                     </Box>
                   }
@@ -103,9 +137,27 @@ const ConnectedUsers = () => {
                       <Typography variant="caption" color="text.secondary">
                         ID: {user.spotifyId}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                        Connecté il y a {formatConnectedTime(user.connectedAt)}
-                      </Typography>
+                      {user.connectedAt ? (
+                        (() => {
+                          const t = formatConnectedTime(user.connectedAt);
+                          if (!t) return (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              Connecté
+                            </Typography>
+                          );
+                          // If the formatter returned "À l'instant", don't prepend "il y a"
+                          const prefix = t === "À l'instant" ? 'Connecté' : 'Connecté il y a';
+                          return (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              {prefix} {t}
+                            </Typography>
+                          );
+                        })()
+                      ) : (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                          Connecté
+                        </Typography>
+                      )}
                     </Box>
                   }
                 />
@@ -149,10 +201,15 @@ const ConnectedUsers = () => {
             Total: {connectedUsers.length} utilisateur{connectedUsers.length > 1 ? 's' : ''}
           </Typography>
           {playbackState.fetcher && (
-            <Typography variant="caption" color="primary" sx={{ display: 'block' }}>
-              Fetcher actif: {playbackState.fetcher?.name || playbackState.fetcher}
-            </Typography>
-          )}
+            <>
+              <Typography variant="caption" color="primary" sx={{ display: 'block' }}>
+                Fetcher* actif: {playbackState.fetcher?.name || playbackState.fetcher}
+              </Typography>
+              <Typography variant="caption" color="info" sx={{ display: 'block' }}>
+                *Utilisateur ou le trafic des chansons est attribué
+              </Typography>
+            </>
+          )}          
           {playbackState.queue && playbackState.queue.length > 0 && (
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
               File d'attente: {playbackState.queue.length} chanson{playbackState.queue.length > 1 ? 's' : ''}

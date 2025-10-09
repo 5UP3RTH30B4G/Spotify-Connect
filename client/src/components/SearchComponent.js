@@ -342,7 +342,7 @@ const SearchComponent = ({ onTrackQueued }) => {
                         fontSize: { xs: '0.8rem', sm: '0.875rem' }
                       }}
                     >
-                      {track.artists?.map(artist => artist.name).join(', ')}
+                      {(track.artists && track.artists.map(artist => artist.name).join(', ')) || ''}
                     </Typography>
                     <Box sx={{ 
                       display: 'flex', 

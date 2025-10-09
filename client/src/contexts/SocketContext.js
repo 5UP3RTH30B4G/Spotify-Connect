@@ -22,6 +22,7 @@ export const SocketProvider = ({ children, socket }) => {
     fetcher: null
   });
   const [messages, setMessages] = useState([]);
+  const [serverRateLimitedMs, setServerRateLimitedMs] = useState(0);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
 
   useEffect(() => {
@@ -87,6 +88,24 @@ export const SocketProvider = ({ children, socket }) => {
     // Événements de lecture
     socket.on('playback_state_updated', (state) => {
       setPlaybackState(state);
+    });
+
+    // Server-side rate limit notification: pause client polling/backoff
+    socket.on('server_rate_limited', (data) => {
+      try {
+        const ms = data?.msRemaining || 0;
+        if (ms > 0) {
+          setServerRateLimitedMs(ms);
+          addSystemMessage(`⚠️ Server rate-limited for ${Math.round(ms/1000)}s. Pausing API calls.`, 'warning');
+          // Clear after ms
+          setTimeout(() => {
+            setServerRateLimitedMs(0);
+            addSystemMessage('✅ Server rate-limit lifted. Resuming API calls.', 'success');
+          }, ms);
+        }
+      } catch (err) {
+        console.warn('Error handling server_rate_limited event', err);
+      }
     });
 
     socket.on('playback_control_received', (data) => {
@@ -381,6 +400,7 @@ export const SocketProvider = ({ children, socket }) => {
     playbackState,
     messages,
     connectionStatus,
+    serverRateLimitedMs,
     emitPlaybackControl,
     emitPlaybackStateChange,
     emitTrackQueued,

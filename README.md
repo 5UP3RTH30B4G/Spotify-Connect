@@ -1,4 +1,4 @@
-# 🎵 Spotify Connect
+# 🎵 Sound Party
 
 Une application web collaborative qui permet à plusieurs utilisateurs de contrôler Spotify ensemble en temps réel.
 
@@ -40,8 +40,8 @@ Une application web collaborative qui permet à plusieurs utilisateurs de contr�
 
 ### 1. Cloner le projet
 ```bash
-git clone https://github.com/5UP3RTH30B4G/spotify-connect
-cd spotify-connect
+git clone https://github.com/5UP3RTH30B4G/Sound-Party
+cd Sound-Party
 ```
 
 ### 2. Configuration Spotify Developer
@@ -50,7 +50,7 @@ cd spotify-connect
 2. Connectez-vous avec votre compte Spotify
 3. Cliquez sur **"Create App"**
 4. Remplissez les informations :
-   - **App name** : `Spotify Connect` (ou le nom de votre choix)
+   - **App name** : `Sound Party` (ou le nom de votre choix)
    - **App description** : `Application collaborative Spotify`
    - **Website** : `http://127.0.0.1:3000`
    - **Redirect URI** : `http://127.0.0.1:5000/auth/callback`
@@ -156,7 +156,7 @@ Le serveur servira automatiquement les fichiers statiques du client buildé.
 
 ### Vérification du bon fonctionnement
 
-1. ✅ **Serveur** : http://127.0.0.1:5000 doit afficher "Spotify Connect Server is running"
+1. ✅ **Serveur** : http://127.0.0.1:5000 doit afficher "Sound Party Server is running"
 2. ✅ **Client** : http://127.0.0.1:3000 doit afficher la page de connexion Spotify
 3. ✅ **Socket.IO** : Les connexions temps réel doivent fonctionner (visible dans les logs)
 
@@ -194,7 +194,7 @@ L'application est organisée en plusieurs sections :
 
 ### Structure du projet
 ```
-spotify-connect/
+Sound-Party/
 ├── server/              # Backend Node.js
 │   ├── routes/         # Routes API
 │   ├── socket/         # Gestion Socket.IO

@@ -1,2 +1,2 @@
 @echo off 
-ssh root@scpearth.fr "pm2 logs spotify-connect" 
+ssh root@scpearth.fr "pm2 logs Sound-Party" 

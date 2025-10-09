@@ -187,29 +187,37 @@ router.post('/logout', (req, res) => {
 
 // Route pour vérifier le statut de connexion
 router.get('/status', async (req, res) => {
+  console.log('🔍 Vérification status auth - Headers:', req.headers.cookie);
   const sessionId = req.cookies?.session_id;
+  console.log('🔍 Session ID reçu:', sessionId);
   
   if (!sessionId) {
-    return res.json({ authenticated: false });
+    console.log('❌ Aucun session ID dans les cookies');
+    return res.json({ authenticated: false, reason: 'no_session_id' });
   }
 
   const session = sessionManager.getSession(sessionId);
+  console.log('🔍 Session trouvée:', !!session, session ? 'User: ' + session.user?.display_name : 'Aucune');
+  
   if (!session || !session.access_token) {
-    return res.json({ authenticated: false });
+    console.log('❌ Session invalide ou token manquant');
+    return res.json({ authenticated: false, reason: 'invalid_session' });
   }
 
   try {
+    console.log('🔍 Test du token Spotify pour:', session.user?.display_name);
     const response = await axios.get('https://api.spotify.com/v1/me', {
       headers: { 'Authorization': 'Bearer ' + session.access_token }
     });
 
+    console.log('✅ Token valide pour:', response.data.display_name);
     res.json({ 
       authenticated: true, 
       user: response.data 
     });
   } catch (error) {
-    console.error('Token expiré ou invalide pour la session:', sessionId);
-    res.json({ authenticated: false });
+    console.error('❌ Token expiré ou invalide pour la session:', sessionId, error.response?.status, error.response?.data);
+    res.json({ authenticated: false, reason: 'spotify_token_invalid', error: error.response?.data });
   }
 });
 

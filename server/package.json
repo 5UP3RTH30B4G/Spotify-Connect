@@ -1,7 +1,7 @@
 {
-  "name": "spotify-connect-server",
+  "name": "Sound-Party-server",
   "version": "1.0.1",
-  "description": "Backend pour l'application Spotify Connect collaborative",
+  "description": "Backend pour l'application Sound Party collaborative",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

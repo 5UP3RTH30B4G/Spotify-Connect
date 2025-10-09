@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 
 echo.
 echo ============================================
-echo    📊 LOGS SPOTIFY CONNECT
+echo    📊 LOGS Sound Party
 echo ============================================
 
 REM Lecture de la configuration
@@ -51,7 +51,7 @@ echo 📊 Statut de l'application...
 
 :: Créer un script temporaire pour les commandes SSH
 echo @echo off > temp_status.cmd
-echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "echo '🔍 Statut PM2:' && pm2 status && echo '' && echo '📝 Logs récents (50 dernières lignes):' && pm2 logs spotify-connect --lines 50 --nostream 2>/dev/null || echo 'Aucun log disponible' && echo '' && echo '💾 Utilisation mémoire:' && pm2 monit --no-colors 2>/dev/null | head -10 || echo 'Info mémoire non disponible' && echo '' && echo '🌐 Test de connectivité locale:' && curl -s http://127.0.0.1:3001 >/dev/null && echo '✅ Application répond sur port 3001' || echo '❌ Application ne répond pas'" >> temp_status.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "echo '🔍 Statut PM2:' && pm2 status && echo '' && echo '📝 Logs récents (50 dernières lignes):' && pm2 logs Sound-Party --lines 50 --nostream 2>/dev/null || echo 'Aucun log disponible' && echo '' && echo '💾 Utilisation mémoire:' && pm2 monit --no-colors 2>/dev/null | head -10 || echo 'Info mémoire non disponible' && echo '' && echo '🌐 Test de connectivité locale:' && curl -s http://127.0.0.1:3001 >/dev/null && echo '✅ Application répond sur port 3001' || echo '❌ Application ne répond pas'" >> temp_status.cmd
 
 :: Utiliser le gestionnaire de mots de passe si disponible
 if exist "ssh-credentials.dat" (
@@ -72,7 +72,7 @@ echo.
 
 :: Créer un script temporaire pour les logs en temps réel
 echo @echo off > temp_realtime.cmd
-echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "pm2 logs spotify-connect" >> temp_realtime.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "pm2 logs Sound-Party" >> temp_realtime.cmd
 
 :: Utiliser le gestionnaire de mots de passe si disponible
 if exist "ssh-credentials.dat" (
@@ -92,7 +92,7 @@ echo ❌ Logs d'erreur uniquement...
 
 :: Créer un script temporaire pour les erreurs
 echo @echo off > temp_errors.cmd
-echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "echo 'Erreurs PM2:' && pm2 logs spotify-connect --err --lines 50 --nostream 2>/dev/null || echo 'Aucune erreur PM2' && echo '' && echo 'Erreurs système:' && journalctl -u nginx --no-pager -n 20 2>/dev/null || echo 'Logs nginx non disponibles'" >> temp_errors.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "echo 'Erreurs PM2:' && pm2 logs Sound-Party --err --lines 50 --nostream 2>/dev/null || echo 'Aucune erreur PM2' && echo '' && echo 'Erreurs système:' && journalctl -u nginx --no-pager -n 20 2>/dev/null || echo 'Logs nginx non disponibles'" >> temp_errors.cmd
 
 :: Utiliser le gestionnaire de mots de passe si disponible
 if exist "ssh-credentials.dat" (
@@ -112,7 +112,7 @@ echo 🔄 Redémarrage de l'application...
 
 :: Créer un script temporaire pour le redémarrage
 echo @echo off > temp_restart.cmd
-echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH% && pm2 restart spotify-connect && echo 'Application redémarrée!' && pm2 status" >> temp_restart.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "cd %DEPLOY_PATH% && pm2 restart Sound-Party && echo 'Application redémarrée!' && pm2 status" >> temp_restart.cmd
 
 :: Utiliser le gestionnaire de mots de passe si disponible
 if exist "ssh-credentials.dat" (
@@ -132,7 +132,7 @@ echo ⏹️  Arrêt de l'application...
 
 :: Créer un script temporaire pour l'arrêt
 echo @echo off > temp_stop.cmd
-echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "pm2 stop spotify-connect && echo 'Application arrêtée!' && pm2 status" >> temp_stop.cmd
+echo ssh %DEPLOY_USER%@%DEPLOY_HOST% "pm2 stop Sound-Party && echo 'Application arrêtée!' && pm2 status" >> temp_stop.cmd
 
 :: Utiliser le gestionnaire de mots de passe si disponible
 if exist "ssh-credentials.dat" (

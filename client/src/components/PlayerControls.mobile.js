@@ -35,6 +35,7 @@ const PlayerControls = () => {
     emitPlaybackStateChange,
     connectionStatus 
   } = useSocket();
+  const { serverRateLimitedMs } = useSocket();
 
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -119,15 +120,17 @@ const PlayerControls = () => {
   }, [API_BASE_URL, rateLimited]);
 
   useEffect(() => {
+    if (serverRateLimitedMs && serverRateLimitedMs > 0) return;
+
     fetchPlaybackState();
     fetchDevices();
-    
+
     const playbackInterval = setInterval(() => {
       if (!rateLimited) {
         fetchPlaybackState();
       }
     }, 10000);
-    
+
     const devicesInterval = setInterval(() => {
       if (!rateLimited) {
         fetchDevices();
@@ -316,24 +319,24 @@ const PlayerControls = () => {
               }}>
                 <Typography 
                   variant="subtitle1" 
-                  className={`scrolling-text ${currentTrack.name.length > 3 ? 'scrolling-text-active' : 'scrolling-text-inactive'}`}
+                  className={`scrolling-text ${((currentTrack.name || '').length) > 3 ? 'scrolling-text-active' : 'scrolling-text-inactive'}`}
                   sx={{ 
                     fontWeight: 'bold',
                     color: 'white',
                     fontSize: { xs: '1rem', sm: '1.1rem' },
-                    animationName: currentTrack.name.length > 3 ? 'scrollTextComplete' : 'none'
+                    animationName: ((currentTrack.name || '').length) > 3 ? 'scrollTextComplete' : 'none'
                   }}>
                   {currentTrack.name}
                 </Typography>
                 <Typography 
                   variant="body2" 
                   color="text.secondary" 
-                  className={`scrolling-text ${(currentTrack.artists?.map(artist => artist.name).join(', ')).length > 3 ? 'scrolling-text-active' : 'scrolling-text-inactive'}`}
+                  className={`scrolling-text (${((currentTrack.artists && currentTrack.artists.map(artist => artist.name).join(', ')) || '')}.length > 3 ? 'scrolling-text-active' : 'scrolling-text-inactive'}`}
                   sx={{
                     fontSize: { xs: '0.875rem', sm: '0.875rem' },
-                    animationName: (currentTrack.artists?.map(artist => artist.name).join(', ')).length > 3 ? 'scrollTextArtistComplete' : 'none'
+                    animationName: ((currentTrack.artists && currentTrack.artists.map(artist => artist.name).join(', ')) || '').length > 3 ? 'scrollTextArtistComplete' : 'none'
                   }}>
-                  {currentTrack.artists?.map(artist => artist.name).join(', ')}
+                  {(currentTrack.artists && currentTrack.artists.map(artist => artist.name).join(', ')) || ''}
                 </Typography>
                 <Typography 
                   variant="caption" 

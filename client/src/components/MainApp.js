@@ -16,8 +16,9 @@ const MainApp = () => {
 
   useEffect(() => {
     if (!loading && !authenticated) navigate('/login');
-    if (authenticated && user) setTimeout(() => checkAuthStatus(), 1000);
-  }, [authenticated, loading, navigate, user, checkAuthStatus]);
+    // Suppression de la vérification automatique pour éviter la boucle infinie
+    // if (authenticated && user) setTimeout(() => checkAuthStatus(), 1000);
+  }, [authenticated, loading, navigate]);
 
   const handleLogout = async () => {
     await logout();
@@ -29,7 +30,7 @@ const MainApp = () => {
       <div className="app-container">
         <div className="loading-screen">
           <div className="loading-spinner"></div>
-          <p>Chargement de Spotify Connect...</p>
+          <p>Chargement de Sound Party...</p>
         </div>
       </div>
     );
@@ -43,7 +44,7 @@ const MainApp = () => {
       <header className="app-header">
         <div className="header-content">
           <div className="logo-section">
-            <h1 className="app-title">🎵 Spotify Connect</h1>
+            <h1 className="app-title">🎵 Sound Party</h1>
           </div>
           
           <div className="header-info">

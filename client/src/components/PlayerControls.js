@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Card,
@@ -32,6 +32,7 @@ const PlayerControls = () => {
     emitPlaybackControl, 
     emitPlaybackStateChange
   } = useSocket();
+  const { serverRateLimitedMs } = useSocket();
 
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -104,6 +105,40 @@ const PlayerControls = () => {
     }
   }, [API_BASE_URL, refreshToken, rateLimited]);
 
+  // Throttle combiné pour playback + devices: au moins 1000ms entre deux séries d'appels
+  const lastApiCallRef = useRef(0);
+  const scheduledRef = useRef(null);
+
+  const performThrottledFetch = useCallback(() => {
+    if (!API_BASE_URL || !refreshToken || rateLimited) return;
+    // respect server-side rate limiting
+    if (serverRateLimitedMs && serverRateLimitedMs > 0) return;
+
+    const now = Date.now();
+    const elapsed = now - (lastApiCallRef.current || 0);
+    const execute = async () => {
+      lastApiCallRef.current = Date.now();
+      try {
+        // run both in parallel but treat them as one "API interaction"
+        await Promise.all([fetchPlaybackState(), fetchDevices()]);
+      } catch (e) {
+        // ignore individual errors here (they're handled in each fn)
+      }
+    };
+
+    if (elapsed >= 1000) {
+      // enough time passed
+      execute();
+    } else {
+      // schedule the next permitted call if none scheduled
+      if (scheduledRef.current) return;
+      scheduledRef.current = setTimeout(() => {
+        scheduledRef.current = null;
+        execute();
+      }, 1000 - elapsed);
+    }
+  }, [API_BASE_URL, refreshToken, rateLimited, serverRateLimitedMs, fetchPlaybackState, fetchDevices]);
+
   // Polling régulier de l'état Spotify
   useEffect(() => {
     const amIFetcher = playbackState?.fetcher && (playbackState.fetcher.spotifyId === user?.id || playbackState.fetcher.name === user?.display_name);
@@ -115,12 +150,23 @@ const PlayerControls = () => {
       return;
     }
 
-    fetchPlaybackState();
-    fetchDevices();
-    // Poll at 2s for the fetcher to reduce API usage
-    const interval = setInterval(fetchPlaybackState, 1000);
-    return () => clearInterval(interval);
-  }, [fetchPlaybackState, fetchDevices, rateLimited, playbackState, user]);
+    // respect server-side rate limiting
+    if (serverRateLimitedMs && serverRateLimitedMs > 0) return;
+
+    // initial immediate call and then polling every 1s using the throttled performer
+    performThrottledFetch();
+    const interval = setInterval(() => {
+      performThrottledFetch();
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+      if (scheduledRef.current) {
+        clearTimeout(scheduledRef.current);
+        scheduledRef.current = null;
+      }
+    };
+  }, [fetchPlaybackState, fetchDevices, rateLimited, playbackState, user, performThrottledFetch, serverRateLimitedMs]);
 
   // Synchroniser avec les événements socket
   useEffect(() => {
@@ -177,6 +223,7 @@ const PlayerControls = () => {
   }, [API_BASE_URL, fetchPlaybackState]);
 
   const handlePlayPause = async () => {
+    if (serverRateLimitedMs && serverRateLimitedMs > 0) return;
     try {
       const action = isPlaying ? 'pause' : 'play';
       const response = await fetch(`${API_BASE_URL}/api/spotify/${action}`, {
@@ -195,6 +242,7 @@ const PlayerControls = () => {
   };
 
   const handleNext = async () => {
+    if (serverRateLimitedMs && serverRateLimitedMs > 0) return;
     try {
       // Delegate the 'next' action to the server so it can coordinate queue vs Spotify
       emitPlaybackControl('next');
@@ -206,6 +254,7 @@ const PlayerControls = () => {
   };
 
   const handlePrevious = async () => {
+    if (serverRateLimitedMs && serverRateLimitedMs > 0) return;
     try {
       const response = await fetch(`${API_BASE_URL}/api/spotify/previous`, {
         method: 'POST',
@@ -361,7 +410,7 @@ const PlayerControls = () => {
                       color="text.secondary" 
                       noWrap
                     >
-                      {currentTrack.artists?.map(artist => artist.name).join(', ')}
+                      {(currentTrack.artists && currentTrack.artists.map(artist => artist.name).join(', ')) || ''}
                     </Typography>
                     <Typography 
                       variant="caption" 

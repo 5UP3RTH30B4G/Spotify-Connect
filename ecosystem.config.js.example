@@ -1,7 +1,7 @@
 module.exports = {
 // server configuration for PM2 process manager
   apps: [{
-    name: 'spotify-connect-server',
+    name: 'Sound-Party-server',
     script: './server/index.js',
     cwd: process.cwd(),
     env: {
