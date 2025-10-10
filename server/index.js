@@ -5,6 +5,7 @@ const fs = require('fs');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const lusca = require('lusca');
 require('dotenv').config();
 
 // Vérification et configuration des variables d'environnement
@@ -71,7 +72,8 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
- 
+app.use(lusca.csrf());
+
 // Routes
 app.use('/auth', authRoutes);
 app.use('/api/spotify', spotifyRoutes);
