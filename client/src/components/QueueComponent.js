@@ -69,10 +69,11 @@ const QueueComponent = () => {
 
   return (
     <Box sx={{ 
-      height: '100%', 
       display: 'flex', 
       flexDirection: 'column',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      maxHeight: { xs: '40vh', sm: '50vh', md: '60vh' },
+      minHeight: 0
     }}>
       {queue && queue.length > 0 ? (
         <>
