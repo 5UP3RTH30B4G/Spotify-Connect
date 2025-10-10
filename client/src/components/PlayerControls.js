@@ -30,9 +30,11 @@ const PlayerControls = () => {
   const { 
     playbackState, 
     emitPlaybackControl, 
-    emitPlaybackStateChange
+    emitPlaybackStateChange,
+    emitPlayNextFromQueue,
+    emitTrackRemovedFromQueue,
+    serverRateLimitedMs
   } = useSocket();
-  const { serverRateLimitedMs } = useSocket();
 
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -108,6 +110,10 @@ const PlayerControls = () => {
   // Throttle combiné pour playback + devices: au moins 1000ms entre deux séries d'appels
   const lastApiCallRef = useRef(0);
   const scheduledRef = useRef(null);
+  const lastAutoPlayRequestRef = useRef(0);
+  const basePositionRef = useRef(position);
+  const lastPlaybackUpdateRef = useRef(Date.now());
+  const estimateIntervalRef = useRef(null);
 
   const performThrottledFetch = useCallback(() => {
     if (!API_BASE_URL || !refreshToken || rateLimited) return;
@@ -177,50 +183,117 @@ const PlayerControls = () => {
     }
   }, [playbackState]);
 
-  // Écouter les événements de lecture automatique depuis la queue
+  // Estimate current position using the last known playbackState position + elapsed time
+  useEffect(() => {
+    const END_MARGIN_MS = 2500;
+    const COOLDOWN_MS = 5000;
+    const TICK_MS = 500;
+
+    // Clean previous interval
+    if (estimateIntervalRef.current) {
+      clearInterval(estimateIntervalRef.current);
+      estimateIntervalRef.current = null;
+    }
+
+    // When playbackState updates, capture its baseline position and timestamp
+    // Only take baseline playback position from server when this client is allowed
+    // to see full playback info (fetcher) or when there is no fetcher and the user is premium.
+    const amIFetcher = playbackState?.fetcher && (playbackState.fetcher.spotifyId === user?.id || playbackState.fetcher.name === user?.display_name);
+    const noFetcher = !playbackState?.fetcher;
+    const canUsePlaybackState = amIFetcher || (noFetcher && user?.product === 'premium');
+
+    if (canUsePlaybackState && playbackState && playbackState.position !== undefined) {
+      basePositionRef.current = playbackState.position || 0;
+      lastPlaybackUpdateRef.current = Date.now();
+    }
+
+    // Only run estimator when playback is active and we have a current track
+    if (!isPlaying || !currentTrack || duration <= 0) {
+      return;
+    }
+
+    estimateIntervalRef.current = setInterval(() => {
+      try {
+        const now = Date.now();
+        const elapsed = Math.max(0, now - (lastPlaybackUpdateRef.current || now));
+        const estimated = Math.min(duration, (basePositionRef.current || 0) + elapsed);
+        setPosition(estimated);
+
+        // If there is a queue, trigger next when within margin (with cooldown)
+        if (playbackState && playbackState.queue && playbackState.queue.length > 0) {
+          if (now - (lastAutoPlayRequestRef.current || 0) >= COOLDOWN_MS) {
+            if (estimated >= (duration - END_MARGIN_MS)) {
+              emitPlayNextFromQueue();
+              lastAutoPlayRequestRef.current = now;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Erreur estimation position:', err);
+      }
+    }, TICK_MS);
+
+    return () => {
+      if (estimateIntervalRef.current) {
+        clearInterval(estimateIntervalRef.current);
+        estimateIntervalRef.current = null;
+      }
+    };
+  }, [isPlaying, currentTrack, duration, playbackState, emitPlayNextFromQueue]);
+
+  // Écouter l'événement CustomEvent 'autoPlayTrackFromQueue' dispatché par SocketContext
   useEffect(() => {
     if (!API_BASE_URL) return;
 
-    const handleAutoPlay = async () => {
-      console.log('🎵 Lecture automatique depuis la queue détectée');
+    const handler = async (e) => {
       try {
-        // Délai pour laisser le serveur traiter
-        setTimeout(fetchPlaybackState, 1000);
-      } catch (error) {
-        console.error('Erreur lors de la lecture automatique:', error);
-      }
-    };
+        const { track, requestedBy } = e.detail || {};
+        if (!track) return;
 
-    const handleQueueNext = async () => {
-      console.log('⏭️ Passage au titre suivant depuis la queue');
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/spotify/queue/next`, {
+        console.log('🎵 autoPlayTrackFromQueue reçu pour:', track.name, 'demandé par', requestedBy);
+
+        // Gate: only the fetcher or a premium user should attempt to call Spotify API directly
+        const amIFetcher = playbackState?.fetcher && (playbackState.fetcher.spotifyId === user?.id || playbackState.fetcher.name === user?.display_name);
+        const canAttemptPlay = amIFetcher || user?.product === 'premium';
+
+        if (!canAttemptPlay) {
+          // Not authorized to perform the play; just refresh state later to reflect server-side actions
+          console.log('ℹ️ Pas autorisé à jouer localement, demande au serveur de jouer. Rafraîchissement d\'état prévu.');
+          setTimeout(fetchPlaybackState, 1000);
+          return;
+        }
+
+        // Attempt to play the requested track via server API (will use cookies/session)
+        const resp = await fetch(`${API_BASE_URL}/api/spotify/play-track`, {
           method: 'POST',
-          credentials: 'include'
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ uri: track.uri })
         });
-        
-        if (response.ok) {
-          console.log('✅ Titre suivant joué depuis la queue');
+
+        if (resp.ok) {
+          console.log('✅ Lecture locale déclenchée pour la track de la queue:', track.name);
+          // Ask server to remove the track from the queue
+          if (emitTrackRemovedFromQueue && track.id) {
+            emitTrackRemovedFromQueue(track.id);
+          }
+          // Refresh playback state shortly after
+          setTimeout(fetchPlaybackState, 1000);
+        } else {
+          const txt = await resp.text();
+          console.warn('⚠️ play-track failed for autoPlayTrackFromQueue:', txt);
+          // fallback: refresh
           setTimeout(fetchPlaybackState, 1000);
         }
-      } catch (error) {
-        console.error('Erreur lors du passage au titre suivant:', error);
+      } catch (err) {
+        console.error('Erreur handling autoPlayTrackFromQueue:', err);
+        setTimeout(fetchPlaybackState, 1000);
       }
     };
 
-    // Écouter les événements socket pour auto-play
-    if (window.socket) {
-      window.socket.on('auto_play_next', handleAutoPlay);
-      window.socket.on('queue_next', handleQueueNext);
-    }
-
-    return () => {
-      if (window.socket) {
-        window.socket.off('auto_play_next', handleAutoPlay);
-        window.socket.off('queue_next', handleQueueNext);
-      }
-    };
-  }, [API_BASE_URL, fetchPlaybackState]);
+    window.addEventListener('autoPlayTrackFromQueue', handler);
+    return () => window.removeEventListener('autoPlayTrackFromQueue', handler);
+  }, [API_BASE_URL, fetchPlaybackState, playbackState, user, emitTrackRemovedFromQueue]);
 
   const handlePlayPause = async () => {
     if (serverRateLimitedMs && serverRateLimitedMs > 0) return;
